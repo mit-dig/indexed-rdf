@@ -8,7 +8,7 @@ window.indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndex
  * @constructor Creates a new IRDFEnvironment with the specified indexedDB backing store.
  * @param db {<a href="http://www.w3.org/TR/IndexedDB/#idl-def-IDBDatabase">IDBDatabase</a>} The indexedDB database to use as a backing store for the IRDFEnvironment.
  */
-var IRDFEnvironment = function(db) { return new IRDFEnvironment.fn.init(db); };
+var IRDFEnvironment = function(db) { IRDFEnvironment.fn.init(db); };
 
 /**
  * @class Implements <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-RDFEnvironment">RDFEnvironment</a>.
@@ -29,6 +29,19 @@ IRDFEnvironment.fn = IRDFEnvironment.prototype = {
 	 * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Profile-base">Profile#base</a>
 	 */
 	this.base = null;
+	
+	/**
+	 * @private
+	 * The IRDFTermMap of the environment.
+	 * @type IRDFTermMap
+	 */
+	//	this.envTerms = new IRDFTermMap();
+	/**
+	 * @private
+	 * The IRDFPrefixMap of the environment.
+	 * @type IRDFPrefixMap
+	 */
+	//	this.envPrefixes = new IRDFPrefixMap();
     },
     
     /**
@@ -60,7 +73,7 @@ IRDFEnvironment.fn = IRDFEnvironment.prototype = {
      * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Profile-prefixes">Profile#prefixes</a>
      */
     get prefixes() {
-	return null;
+	return this.envPrefixes;
     },
     /**
      * The mapping of terms to IRIs in the environment.
@@ -70,7 +83,7 @@ IRDFEnvironment.fn = IRDFEnvironment.prototype = {
      * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Profile-terms">Profile#terms</a>
      */
     get terms() {
-	return null;
+	return this.envTerms;
     },
     
     // Don't return NULL?
@@ -165,7 +178,7 @@ IRDFEnvironment.fn = IRDFEnvironment.prototype = {
      * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createBlankNode">RDFEnvironment#createBlankNode</a>
      */
     createBlankNode: function() {
-	//	return new IRDFBlankNode();
+	return new IRDFBlankNode();
     },
     
     /**
@@ -175,7 +188,7 @@ IRDFEnvironment.fn = IRDFEnvironment.prototype = {
      * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createNamedNode">RDFEnvironment#createNamedNode</a>
      */
     createNamedNode: function(iri) {
-	//	return new IRDFNamedNode(iri);
+	return new IRDFNamedNode(iri);
     },
     
     // What are the supported datatypes?
@@ -188,7 +201,7 @@ IRDFEnvironment.fn = IRDFEnvironment.prototype = {
      * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createLiteral">RDFEnvironment#createLiteral</a>
      */
     createLiteral: function(value, language, datatype) {
-	//	return new IRDFLiteral(value, language, datatype);
+	return new IRDFLiteral(value, language, datatype);
     },
     
     /**
@@ -198,7 +211,7 @@ IRDFEnvironment.fn = IRDFEnvironment.prototype = {
      * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createGraphLiteral">RDFEnvironment#createGraphLiteral</a>
      */
     createGraphLiteral: function(graph) {
-	//	return new IRDFGraphLiteral(graph);
+	return new IRDFGraphLiteral(graph);
     },
     
     /**
@@ -210,7 +223,7 @@ IRDFEnvironment.fn = IRDFEnvironment.prototype = {
      * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createTriple">RDFEnvironment#createTriple</a>
      */
     createTriple: function(subject, property, object) {
-	//	return new IRDFTriple(subject, property, object);
+	return new IRDFTriple(subject, property, object);
     },
     
     /**
@@ -220,7 +233,7 @@ IRDFEnvironment.fn = IRDFEnvironment.prototype = {
      * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createGraph">RDFEnvironment#createGraph</a>
      */
     createGraph: function(triples) {
-	//	return new IRDFGraph(triples);
+	return new IRDFGraph(triples);
     },
     
     /**
@@ -231,7 +244,7 @@ IRDFEnvironment.fn = IRDFEnvironment.prototype = {
      * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createAction">RDFEnvironment#createAction</a>
      */
     createAction: function(test, action) {
-	//	return new IRDFTripleAction(test, action);
+	return new IRDFTripleAction(test, action);
     },
     
     /**
@@ -242,7 +255,7 @@ IRDFEnvironment.fn = IRDFEnvironment.prototype = {
      * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createProfile">RDFEnvironment#createProfile</a>
      */
     createProfile: function(base, empty) {
-	//	return new IRDFProfile(base, empty);
+	return new IRDFProfile(base, empty);
     },
     
     /**
@@ -252,7 +265,7 @@ IRDFEnvironment.fn = IRDFEnvironment.prototype = {
      * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createTermMap">RDFEnvironment#createTermMap</a>
      */
     createTermMap: function(empty) {
-	//	return new IRDFTermMap(empty);
+	return new IRDFTermMap(empty);
     },
     
     /**
@@ -262,7 +275,7 @@ IRDFEnvironment.fn = IRDFEnvironment.prototype = {
      * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createPrefixMap">RDFEnvironment#createPrefixMap</a>
      */
     createPrefixMap: function(empty) {
-	//	return new IRDFPrefixMap(empty);
+	return new IRDFPrefixMap(empty);
     },
     
     /**
@@ -272,13 +285,12 @@ IRDFEnvironment.fn = IRDFEnvironment.prototype = {
 	this.db.close();
     }
 };
-IRDFEnvironment.fn.init.prototype = IRDFEnvironment.fn;
 
 /**
  * @private
  * @constructor Creates an EventListenerWrapper
  */
-var EventListenerWrapper = function() { return new EventListenerWrapper.fn.init(); };
+var EventListenerWrapper = function() { EventListenerWrapper.fn.init(); };
 
 /**
  * @private
@@ -305,14 +317,13 @@ EventListenerWrapper.fn = EventListenerWrapper.prototype = {
 	this.wrappedFun(evt);
     }
 };
-EventListenerWrapper.fn.init.prototype = EventListenerWrapper.fn;
 
 /**
  * @private
  * @constructor Creates a new IRDFRequest.
  * @param idbRequest {<a href="http://www.w3.org/TR/IndexedDB/#idl-def-IDBRequest">IDBRequest</a>} The indexedDB request object encapsulated for use with indexedRDF.
  */
-var IRDFRequest = function(idbRequest) { return new IRDFRequest.fn.init(idbRequest); };
+var IRDFRequest = function(idbRequest) { IRDFRequest.fn.init(idbRequest); };
 
 /**
  * @class An asynchronous request object used to signal store-open events in indexedRDF, like <a href="http://www.w3.org/TR/IndexedDB/#idl-def-IDBRequest">IDBRequest</a> for indexedDB.
@@ -332,13 +343,13 @@ IRDFRequest.fn = IRDFRequest.prototype = {
 	 * The wrapper for the onsuccess function.
 	 * @type EventListenerWrapper
 	 */
-	this.onsuccessFun = EventListenerWrapper();
+	this.onsuccessFun = new EventListenerWrapper();
 	/**
 	 * @private
 	 * The wrapper for the onerror function.
 	 * @type EventListenerWrapper
 	 */
-	this.onerrorFun = EventListenerWrapper()
+	this.onerrorFun = new EventListenerWrapper();
 	
 	/**
 	 * @private
@@ -489,7 +500,6 @@ IRDFRequest.fn = IRDFRequest.prototype = {
 	}
     }
 };
-IRDFRequest.fn.init.prototype = IRDFRequest.fn;
 /**
  * The state value of a request that has been started, but which has not completed.
  * @field
@@ -530,13 +540,13 @@ IRDFFactory.prototype = {
     open: function(name) {
         // NOTE: This doesn't actually work from a file:/// URI in Firefox!!
 	var idbRequest = indexedDB.open(name);
-	var irdfRequest = IRDFRequest(idbRequest);
+	var irdfRequest = new IRDFRequest(idbRequest);
 	
 	idbRequest.onsuccess = function(evt) {
 	    var irdfEvent = new Object();
 	    
 	    irdfEvent.source = irdfRequest;
-	    irdfEvent.result = IRDFEnvironment(idbRequest.result);
+	    irdfEvent.result = new IRDFEnvironment(idbRequest.result);
 	    
 	    if (irdfRequest.onsuccess &&
 		typeof(irdfRequest.onsuccess) == 'function') {
@@ -576,7 +586,7 @@ IRDFFactory.prototype = {
         }
         
 	var idbRequest = indexedDB.deleteDatabase(name);
-	var irdfRequest = IRDFRequest(idbRequest);
+	var irdfRequest = new IRDFRequest(idbRequest);
 	
 	idbRequest.onsuccess = function(evt) {
 	    var irdfEvent = new Object();
