@@ -1,0 +1,45 @@
+<html>
+<head>
+<title>IRDFFactory Unit Tests</title>
+<script language="JavaScript" src="jsUnitCore.js"></script>
+<script language="JavaScript" src="../indexedRDF.js"></script>
+<script language="JavaScript">
+//<![CDATA[
+function testWindow() {
+    // Make sure that window#indexedRDF is set.
+    assertNotUndefined(window.indexedRDF);
+}
+
+function testOpen() {
+    // Make sure that IRDFFactoryTest#open appears to open a valid request.
+    var req = window.indexedRDF.open("IRDFFactoryTest");
+    
+    assertNotUndefined(req);
+    assertNotNull(req);
+
+    // IRDFRequest is tested in IRDFRequestTest.html
+}
+
+function testDeleteStore() {
+    // Make sure that IRDFFactoryTest#open appears to open a valid request.
+    var req = window.indexedRDF.deleteStore("IRDFFactoryTest");
+    
+    if ((window.indexedDB &&
+         window.indexedDB.deleteDatabase == undefined) ||
+        (window.mozIndexedDB &&
+         window.mozIndexedDB.deleteDatabase == undefined)) {
+        assertNull(req);
+    } else {
+        assertNotUndefined(req);
+        assertNotNull(req);
+    }
+
+    // IRDFRequest is tested in IRDFRequestTest.html
+    // TODO: How to test success??
+}
+//]]>
+</script>
+</head>
+<body>
+</body>
+</html>

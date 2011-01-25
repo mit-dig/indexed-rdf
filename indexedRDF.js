@@ -1,5 +1,8 @@
 (function (window, undefined) {
 
+// Handle beta stuff.
+window.indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB;
+
 /**
  * @private
  * @constructor Creates a new IRDFEnvironment with the specified indexedDB backing store.
@@ -154,7 +157,7 @@ IRDFEnvironment.fn = IRDFEnvironment.prototype = {
     importProfileFromGraph: function(graph, override) {
 	this.prefixes.importFromGraph(graph, override);
 	this.terms.importFromGraph(graph, override);
-    }
+    },
     
     /**
      * Create a new blank node in the environment.
@@ -269,6 +272,7 @@ IRDFEnvironment.fn = IRDFEnvironment.prototype = {
 	this.db.close();
     }
 };
+IRDFEnvironment.fn.init.prototype = IRDFEnvironment.fn;
 
 /**
  * @private
@@ -278,7 +282,7 @@ var EventListenerWrapper = function() { return new EventListenerWrapper.fn.init(
 
 /**
  * @private
- * @class A wrapper object for a general function taking no arguments to make it adhere to the EventListener interface.
+ * @class A wrapper object for a general function taking one argument to make it adhere to the EventListener interface.
  * @name EventListenerWrapper
  * @see <a href="http://www.w3.org/TR/DOM-Level-3-Events/#events-EventListener">EventListener</a>
  */
@@ -289,7 +293,7 @@ EventListenerWrapper.fn = EventListenerWrapper.prototype = {
 	 * The wrapped function.
 	 * @type <a href="http://w3.org/TR/html5/webappapis.html#function">Function</a>
 	 */
-	this.wrappedFun = function() {};
+	this.wrappedFun = function(evt) {};
     },
     
     /**
@@ -298,9 +302,10 @@ EventListenerWrapper.fn = EventListenerWrapper.prototype = {
      * @see <a href="http://www.w3.org/TR/DOM-Level-3-Events/#events-EventListener-handleEvent">EventListener#handleEvent</a>
      */
     handleEvent: function(evt) {
-	this.wrappedFun();
+	this.wrappedFun(evt);
     }
 };
+EventListenerWrapper.fn.init.prototype = EventListenerWrapper.fn;
 
 /**
  * @private
@@ -324,38 +329,28 @@ IRDFRequest.fn = IRDFRequest.prototype = {
 	
 	/**
 	 * @private
-	 * An associative array containing all event listeners, indexed first
-	 * by event name, followed by useCapture.
-	 * @type Object
-	 */
-	this.eventListeners = new Object();
-	
-	/**
-	 * @private
 	 * The wrapper for the onsuccess function.
 	 * @type EventListenerWrapper
 	 */
 	this.onsuccessFun = EventListenerWrapper();
-	this.addEventListener('success', this.onsuccessFun, false);
 	/**
 	 * @private
 	 * The wrapper for the onerror function.
 	 * @type EventListenerWrapper
 	 */
 	this.onerrorFun = EventListenerWrapper()
-	this.addEventListener('error', this.onerrorFun, false);
-    },
-    
-    /**
-     * Cancel the request if the readyState is not DONE.
-     * @see <a href="http://www.w3.org/TR/IndexedDB/#widl-IDBRequest-abort">IDBRequest#abort</a>
-     */
-    abort: function() {
-	if (this.idbRequest &&
-	    this.idbRequest.abort &&
-	    typeof(this.idbRequest.abort) == 'function') {
-	    this.idbRequest.abort();
-	}
+	
+	/**
+	 * @private
+	 * An associative array containing all event listeners, indexed first
+	 * by event name, followed by useCapture.
+	 * @type Object
+	 */
+	this.eventListeners = new Object();
+	this.eventListeners['success'] = new Object();
+        this.eventListeners['success'][false] = [this.onsuccessFun];
+	this.eventListeners['error'] = new Object();
+	this.eventListeners['error'][false] = [this.onerrorFun];
     },
     
     /**
@@ -370,7 +365,7 @@ IRDFRequest.fn = IRDFRequest.prototype = {
 	    this.idbRequest.readyState) {
 	    return this.idbRequest.readyState;
 	} else {
-	    return this.LOADING;
+	    return IRDFRequest.LOADING;
 	}
     },
     
@@ -400,7 +395,7 @@ IRDFRequest.fn = IRDFRequest.prototype = {
     set onerror(fun) {
 	this.onerrorFun.wrappedFun = fun;
     },
-
+    
     /**
      * Register an event listener on this request.
      * @param type {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The event type for which an event listener is registered.
@@ -415,9 +410,21 @@ IRDFRequest.fn = IRDFRequest.prototype = {
 		this.eventListeners[type] = new Object();
 	    }
 	    if (this.eventListeners[type][useCapture] == undefined) {
-		this.eventListeners[type][useCapture] = new Object();
-	    }
-	    this.eventListeners[type][useCapture][listener] = true;
+		this.eventListeners[type][useCapture] = [listener];
+	    } else {
+                // Only add the listener if it's not already there.
+                // Too bad JavaScript doesn't have a true hash-table.
+                var addListener = true;
+                for (var i = 0; i < this.eventListeners[type][useCapture].length; i++) {
+                    if (this.eventListeners[type][useCapture][i] == listener) {
+                        addListener = false;
+                        break;
+                    }
+                }
+                if (addListener) {
+                    this.eventListeners[type][useCapture].push(listener);
+                }
+            }
 	}
     },
     /**
@@ -431,12 +438,17 @@ IRDFRequest.fn = IRDFRequest.prototype = {
 	if (type == 'success' ||
 	    type == 'error') {
 	    if (this.eventListeners[type] != undefined &&
-		this.eventListeners[type][useCapture] != undefined &&
-		this.eventListeners[type][useCapture][listener] != undefined) {
-		delete this.eventListeners[type][useCapture][listener];
+                this.eventListeners[type][useCapture] != undefined) {
+                // Too bad JavaScript doesn't have a true hash-table.
+                for (var i = 0; i < this.eventListeners[type][useCapture].length; i++) {
+                    if (this.eventListeners[type][useCapture][i] == listener) {
+                        this.eventListeners[type][useCapture].splice(i, 1);
+                        break;
+                    }
+                }
 	    }
 	}
-    }
+    },
     /**
      * Dispatch an event into the event model.
      * @param evt {<a href="http://www.w3.org/TR/DOM-Level-3-Events/#events-Event">Event</a>} The event to be dispatched.
@@ -447,8 +459,9 @@ IRDFRequest.fn = IRDFRequest.prototype = {
 	if (evt.type == 'success' ||
 	    evt.type == 'error') {
 	    if (this.eventListeners[evt.type] != undefined) {
-		if (this.eventListeners[type][true] != undefined) {
-		    for (var listener in this.eventListeners[type][true]) {
+		if (this.eventListeners[evt.type][true] != undefined) {
+		    for (var i = 0; i < this.eventListeners[evt.type][true].length; i++) {
+                        var listener = this.eventListeners[evt.type][true][i];
 			try {
 			    if (listener.handleEvent != undefined) {
 				listener.handleEvent(evt);
@@ -459,8 +472,9 @@ IRDFRequest.fn = IRDFRequest.prototype = {
 			}
 		    }
 		}
-		if (this.eventListeners[type][false] != undefined) {
-		    for (var listener in this.eventListeners[type][false]) {
+		if (this.eventListeners[evt.type][false] != undefined) {
+		    for (var i = 0; i < this.eventListeners[evt.type][false].length; i++) {
+                        var listener = this.eventListeners[evt.type][false][i];
 			try {
 			    if (listener.handleEvent != undefined) {
 				listener.handleEvent(evt);
@@ -475,6 +489,7 @@ IRDFRequest.fn = IRDFRequest.prototype = {
 	}
     }
 };
+IRDFRequest.fn.init.prototype = IRDFRequest.fn;
 /**
  * The state value of a request that has been started, but which has not completed.
  * @field
@@ -503,39 +518,89 @@ var IRDFFactory = function() {};
  * @name IRDFFactory
  */
 IRDFFactory.prototype = {
-    stores: [],
-    
     /**
-     * This method return immediately and attempts to open up an
-     * indexedDB database with the given name and description containing a
-     * valid IRDFEnvironment.
+     * This method returns immediately and attempts to open up an
+     * indexedDB database with the given name containing a valid
+     * IRDFEnvironment.  This function will not work when called from a file://
+     * URI in Firefox.
      * @param name {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The name of the database containing an IRDFEnvironment.
-     * @param description {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The description of the database containing an IRDFEnvironment.
      * @return {IRDFRequest}
-     * @throws {<a href="http://www.w3.org/TR/IndexedDB/#idl-def-IDBDatabaseException">IDBDatabaseException</a>} If the parameter name is not valid.
      * @see <a href="http://www.w3.org/TR/IndexedDB/#widl-IDBFactory-open">IDBFactory#open</a>
      */
-    open: function(name, description) {
-	var idbRequest = indexedDB.open(name, description);
-	var irdfRequest = new IRDFRequest(idbRequest);
+    open: function(name) {
+        // NOTE: This doesn't actually work from a file:/// URI in Firefox!!
+	var idbRequest = indexedDB.open(name);
+	var irdfRequest = IRDFRequest(idbRequest);
 	
 	idbRequest.onsuccess = function(evt) {
-	    var irdfEvent = new Object;
+	    var irdfEvent = new Object();
 	    
 	    irdfEvent.source = irdfRequest;
-	    irdfEvent.result = new IRDFEnvironment(evt.result);
+	    irdfEvent.result = IRDFEnvironment(idbRequest.result);
 	    
 	    if (irdfRequest.onsuccess &&
 		typeof(irdfRequest.onsuccess) == 'function') {
-		irdfRequest.onsuccess(evt);
+		irdfRequest.onsuccess(irdfEvent);
 	    } else {
 		irdfEvent.result.close();
 	    }
 	}
 	idbRequest.onerror = function(evt) {
+	    var irdfEvent = new Object();
+	    
+	    irdfEvent.source = irdfRequest;
+	    irdfEvent.code = evt.code;
+            irdfEvent.message = evt.message;
+	    
 	    if (irdfRequest.onerror &&
 		typeof(irdfRequest.onsuccess) == 'function') {
-		irdfRequest.onerror(evt);
+		irdfRequest.onerror(irdfEvent);
+	    }
+	}
+	
+	return irdfRequest;
+    },
+    
+    /**
+     * This method returns immediately and attempts to delete any existing
+     * indexedDB database with the given name containing a valid
+     * IRDFEnvironment.  This method does nothing in Firefox 4.
+     * @param name {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The name of the database containing an IRDFEnvironment.
+     * @return {IRDFRequest}, or null if <a href="http://www.w3.org/TR/IndexedDB/#widl-IDBFactory-deleteDatabase">IDBFactory#deleteDatabase</a> is not implemented (e.g. in Firefox 4).
+     * @see <a href="http://www.w3.org/TR/IndexedDB/#widl-IDBFactory-deleteDatabase">IDBFactory#deleteDatabase</a>
+     */
+    deleteStore: function(name) {
+        // Firefox 4 hasn't implemented this.
+        if (indexedDB.deleteDatabase == undefined) {
+            return null;
+        }
+        
+	var idbRequest = indexedDB.deleteDatabase(name);
+	var irdfRequest = IRDFRequest(idbRequest);
+	
+	idbRequest.onsuccess = function(evt) {
+	    var irdfEvent = new Object();
+	    
+	    irdfEvent.source = irdfRequest;
+	    irdfEvent.result = null;
+	    
+	    if (irdfRequest.onsuccess &&
+		typeof(irdfRequest.onsuccess) == 'function') {
+		irdfRequest.onsuccess(irdfEvent);
+	    } else {
+		irdfEvent.result.close();
+	    }
+	}
+	idbRequest.onerror = function(evt) {
+	    var irdfEvent = new Object();
+	    
+	    irdfEvent.source = irdfRequest;
+	    irdfEvent.code = evt.code;
+            irdfEvent.message = evt.message;
+	    
+	    if (irdfRequest.onerror &&
+		typeof(irdfRequest.onsuccess) == 'function') {
+		irdfRequest.onerror(irdfEvent);
 	    }
 	}
 	
@@ -548,6 +613,12 @@ IRDFFactory.prototype = {
  * The global window object.
  * @name window
  */
+
+/**
+ * The IRDFRequest class (for reference to IRDFRequest constants).
+ * @name window#IRDFRequest
+ */
+window.IRDFRequest = IRDFRequest;
 
 /**
  * The primary IRDFFactory object capable of creating IRDFEnvironments.

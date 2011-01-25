@@ -1,0 +1,134 @@
+<html>
+<head>
+<title>IRDFRequest Unit Tests</title>
+<script language="JavaScript" src="jsUnitCore.js"></script>
+<script language="JavaScript" src="../indexedRDF.js"></script>
+<script language="JavaScript">
+//<![CDATA[
+var testAbortFailed = false;
+var testReadyStateFailed = false;
+var asyncTestCount = 1;
+
+function setUpPage() {
+    // Set up the asynchronous tests.
+    setUpTestReadyState();
+    setUpPageStatus = 'running';
+}
+
+function finishSetUp() {
+    asyncTestCount--;
+    
+    // Are we done with all of the expected asynchronous returns?
+    if (asyncTestCount == 0) {
+        setUpPageStatus = 'complete';
+    }
+}
+
+function setUpTestReadyState() {
+    // Test that IRDFRequest#readyState changes after success/failure.
+    var req = window.indexedRDF.open("IRDFRequestTest");
+    
+    if (req.readyState != IRDFRequest.LOADING) {
+        testReadyStateFailed = testReadyStateFailed || "readyState was not IRDFRequest.LOADING on request creation";
+    }
+    
+    req.onsuccess = function(evt) {
+        if (evt.source.readyState != IRDFRequest.DONE) {
+            testReadyStateFailed = testReadyStateFailed || "readyState was not IRDFRequest.DONE on request success";
+        }
+        evt.result.close();
+        finishSetUp();
+    };
+    req.onerror = function(evt) {
+        if (evt.source.readyState != IRDFRequest.DONE) {
+            testReadyStateFailed = testReadyStateFailed || "readyState was not IRDFRequest.DONE on request error";
+        }
+        finishSetUp();
+    };
+}
+
+function testReadyState() {
+    // Was the ready state correct at the appropriate times?
+    if (testReadyStateFailed !== false) {
+        fail(testReadyStateFailed);
+    }
+}
+
+function testOnsuccess() {
+    // Setting and getting onsuccess should succeed.
+    var value = "onsuccess was set!";
+    var req = window.indexedRDF.open("IRDFRequestTest");
+    
+    req.onsuccess = function(evt) {
+        return value;
+    };
+    assertEquals(value, req.onsuccess());
+}
+
+function testOnerror() {
+    // Setting and getting onerror should succeed.
+    var value = "onerror was set!";
+    var req = window.indexedRDF.open("IRDFRequestTest");
+    
+    req.onerror = function(evt) {
+        return value;
+    };
+    assertEquals(value, req.onerror());
+}
+
+function testEventListeners() {
+    // Make sure that addEventListener and removeEventListener act.
+    var req = window.indexedRDF.open("IRDFRequestTest");
+    var listenerCount = 0;
+    var assertListener = function(evt) {
+        listenerCount++;
+    };
+    var anotherListener = function(evt) {
+        listenerCount++;
+    };
+    var failListener = function(evt) {
+        listenerCount++;
+    };
+    var events = ['success', 'error'];
+    
+    // HTML4 event listeners should work too.
+    req.onsuccess = assertListener;
+    req.onerror = assertListener;
+    
+    for (var event in events) {
+        event = events[event];
+        
+        // Add all the listeners to success.
+        req.addEventListener(event, assertListener, false);
+        // Second add shouldn't matter.
+        req.addEventListener(event, assertListener, false);
+        req.addEventListener(event, anotherListener, false);
+        req.addEventListener(event, assertListener, true);
+        req.addEventListener(event, failListener, false);
+        
+        // Remove failListener.
+        req.removeEventListener(event, failListener, false);
+        // And also remove listeners that shouldn't exist.
+        req.removeEventListener(event, failListener, false);
+        req.removeEventListener(event, failListener, true);
+        
+        // Reset the listener count.
+        listenerCount = 0;
+        
+        // Dispatch an event.
+        var evt = new Object();
+        evt.type = event
+        req.dispatchEvent(evt);
+
+        // And the right number of listeners should have fired
+        // (HTML4 listener + 4 added listeners - 1 removed listener)
+        assertEquals(4, listenerCount);
+    }
+}
+
+//]]>
+</script>
+</head>
+<body>
+</body>
+</html>
