@@ -5,6 +5,147 @@ window.indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndex
 
 /**
  * @private
+ * @constructor Creates a new IRDFPrefixMap.
+ */
+var IRDFPrefixMap = function() { IRDFPrefixMap.fn.init(); };
+
+/**
+ * @class Implements <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-PrefixMap">PrefixMap</a>.
+ * @name IRDFPrefixMap
+ */
+IRDFPrefixMap.fn = IRDFPrefixMap.prototype = {
+    init: function() {
+	
+    },
+    
+    /**
+     * Get the IRI mapped to a particular prefix.
+     * @param prefix {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The prefix to find the mapping for.
+     * @return {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The resolved value of prefix, or null if no resolution is possible.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-PrefixMap-get">PrefixMap#get</a>
+     */
+    get: function(prefix) {
+	return this[prefix];
+    },
+    /**
+     * Set the IRI mapped to a particular prefix.
+     * @param prefix {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The prefix to be mapped.
+     * @param iri {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The IRI to be mapped to the prefix.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-PrefixMap-set">PrefixMap#set</a>
+     */
+    set: function(prefix, iri) {
+	this[prefix] = iri;
+    },
+    /**
+     * Remove mapping of a particular prefix.
+     * @param prefix {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The prefix for which a mapping is to be removed.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-PrefixMap-remove">PrefixMap#remove</a>
+     */
+    remove: function(prefix) {
+	delete this[prefix];
+    },
+    
+    // Return NULL?
+    // Case sensitivity?
+    /**
+     * Resolve a CURIE into an IRI.
+     * @param curie {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The curie to resolve.
+     * @return {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The resolved value of curie if the prefix is known.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-PrefixMap-resolve">PrefixMap#resolve</a>
+     */
+    resolve: function(curie) {
+	curie = curie.split(':', 1);
+	if (this[curie[0]] != undefined) {
+	    return this[curie[0]] + curie[1]
+	} else {
+	    return null;
+	}
+    },
+    /**
+     * Return the CURIE for a given IRI.
+     * @param iri {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The IRI to be shrunk into a CURIE.
+     * @return {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The CURIE corresponding to iri, or iri if no matching prefix is known.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-PrefixMap-shrink">PrefixMap#shrink</a>
+     */
+    shrink: function(iri) {
+	// This is slow!!
+	for (var prefix in this) {
+	    // Which CURIE to choose?  For now we pick the first.
+	    if (this[prefix].length < iri &&
+		this[prefix].substr(0, this[prefix].length) == iri) {
+		// This might not be a valid CURIE!
+		return prefix + ':' + iri.substr(this[prefix].length);
+	    }
+	}
+	return iri;
+    },
+    /**
+     * Set the default IRI prefix to be used when resolving CURIEs lacking a prefix (e.g. ':this').
+     * @param iri {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The IRI to be set as the default prefix.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-PrefixMap-setDefault">PrefixMap#setDefault</a>
+     */
+    setDefault: function(iri) {
+	this[''] = iri;
+    },
+    /**
+     * Import the prefixes from another PrefixMap into this PrefixMap.
+     * @param prefixes {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-PrefixMap">PrefixMap</a>} The PrefixMap to import.
+     * @param override {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-boolean">boolean</a>} If true, conflicting prefixes in the PrefixMap will be overridden by those in the imported PrefixMap.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-PrefixMap-import">PrefixMap#import</a>
+     */
+    import: function(prefixes, override) {
+	for (var prefix in terms) {
+	    if (this[prefix] == undefined || override) {
+		this[prefix] = prefixes[prefix];
+	    }
+	}
+    },
+    /**
+     * Import the prefixes defined in a Graph into this PrefixMap.
+     * @param graph {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-Graph">Graph</a>} A graph containing triples describing prefix mappings according to the <a href="http://www.w3.org/TR/2010/WD-rdfa-core-20100422/#s_profiles">RDFa Profile</a> specification.
+     * @param override {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-boolean">boolean</a>} If true, conflicting prefixes in the environment will be overridden by those in the imported Graph.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-PrefixMap-importFromGraph">PrefixMap#importFromGraph</a>
+     */
+    importFromGraph: function(graph, override) {
+	// Find all triples of the form "?s rdfa:prefix ?literal"
+	var filterPrefixes = new IRDFTripleFilter(function(triple) {
+	    return triple.property.equals(RDFA_PREFIX) &&
+	           triple.object.interfaceName == 'Literal';
+	});
+	var prefixGraph = graph.filter(filterPrefixes);
+	
+	// Add a mapping if we can also find a unique statement
+	// "?s rdfa:uri ?uri"
+	var addMapping = function(graph, override) {
+	    return new IRDFTripleCallback(function(triple) {
+		var mappingResource = triple.subject;
+		var prefix = triple.object.value;
+		
+		// If the prefix should be assigned, find the mapping.
+		if (this[prefix] == undefined || override) {
+		    var checkUnique = new IRDFTripleFilter(function(triple) {
+			return triple.subject.equals(mappingResource) &&
+			       triple.predicate.equals(RDFA_URI) &&
+			       triple.object.interfaceName == 'NamedNode';
+		    });
+		    var unique = graph.the(checkUnique);
+		    
+		    // What if it's not unique?
+		    if (unique) {
+			var uriGraph = graph.filter(checkUnique);
+			
+			this[prefix] = uriGraph.toArray()[0].object.value;
+		    }
+		}
+	    });
+	};
+	
+	prefixGraph.forEach(addMapping(graph, override));
+    }
+};
+
+/**
+ * @private
  * @constructor Creates a new IRDFEnvironment with the specified indexedDB backing store.
  * @param db {<a href="http://www.w3.org/TR/IndexedDB/#idl-def-IDBDatabase">IDBDatabase</a>} The indexedDB database to use as a backing store for the IRDFEnvironment.
  */
@@ -32,16 +173,16 @@ IRDFEnvironment.fn = IRDFEnvironment.prototype = {
 	
 	/**
 	 * @private
-	 * The IRDFTermMap of the environment.
-	 * @type IRDFTermMap
-	 */
-	//	this.envTerms = new IRDFTermMap();
-	/**
-	 * @private
 	 * The IRDFPrefixMap of the environment.
 	 * @type IRDFPrefixMap
 	 */
-	//	this.envPrefixes = new IRDFPrefixMap();
+	this.envPrefixes = new IRDFPrefixMap();
+	/**
+	 * @private
+	 * The IRDFTermMap of the environment.
+	 * @type IRDFTermMap
+	 */
+	this.envTerms = new IRDFTermMap();
     },
     
     /**
