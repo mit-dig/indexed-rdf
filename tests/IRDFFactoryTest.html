@@ -18,6 +18,7 @@ function testOpen() {
     assertNotNull(req);
 
     // IRDFRequest is tested in IRDFRequestTest.html
+    window.indexedRDF.deleteStore("IRDFFactoryTest");
 }
 
 function testDeleteStore() {
@@ -36,6 +37,7 @@ function testDeleteStore() {
 
     // IRDFRequest is tested in IRDFRequestTest.html
     // TODO: How to test success??
+    // TODO: Make sure the database is created first??
 }
 //]]>
 </script>

@@ -15,6 +15,11 @@ function setUpPage() {
     setUpPageStatus = 'running';
 }
 
+function tearDown() {
+    // Clear the database (we don't care about success).
+    window.indexedRDF.deleteStore("IRDFRequestTest");
+}
+
 function finishSetUp() {
     asyncTestCount--;
     
