@@ -115,9 +115,10 @@ function testImport() {
     assertEquals('http://www.example.com/#term', newPrefixes.resolve('t:term'));
     
     // Importing it should, however.
-    prefixes.import(newPrefixes);
+    var importedPrefixes = prefixes.import(newPrefixes);
     assertEquals('http://www.example.com/#term', prefixes.resolve('t:term'));
     assertEquals('http://www.example.com/#term', newPrefixes.resolve('t:term'));
+    assertEquals(prefixes, importedPrefixes);
 
     // Now we change the values in the profile we imported...
     newPrefixes.set('t', 'http://www.example.com/prefix#');
@@ -127,14 +128,16 @@ function testImport() {
     assertEquals('http://www.example.com/prefix#term', newPrefixes.resolve('t:term'));
     
     // And since the values are already set, they won't be overridden.
-    prefixes.import(newPrefixes);
+    importedPrefixes = prefixes.import(newPrefixes);
     assertEquals('http://www.example.com/#term', prefixes.resolve('t:term'));
     assertEquals('http://www.example.com/prefix#term', newPrefixes.resolve('t:term'));
+    assertEquals(prefixes, importedPrefixes);
     
     // Unless we say so.
-    prefixes.import(newPrefixes, true);
+    importedPrefixes = prefixes.import(newPrefixes, true);
     assertEquals('http://www.example.com/prefix#term', prefixes.resolve('t:term'));
     assertEquals('http://www.example.com/prefix#term', newPrefixes.resolve('t:term'));
+    assertEquals(prefixes, importedPrefixes);
     
     // Now we unset the values to be safe in future tests.
     prefixes.remove('t');
@@ -166,8 +169,9 @@ function testImportFromGraph() {
     assertNull(prefixes.resolve('t:term'));
     
     // Importing it should, however.
-    prefixes.importFromGraph(graph);
+    var importedPrefixes = prefixes.importFromGraph(graph);
     assertEquals('http://www.example.com/#term', prefixes.resolve('t:term'));
+    assertEquals(prefixes, importedPrefixes);
 
     // Now we change the values in the profile we imported...
     graph.remove(prefixIRI);
@@ -179,12 +183,14 @@ function testImportFromGraph() {
     assertEquals('http://www.example.com/#term', prefixes.resolve('t:term'));
     
     // And since the values are already set, they won't be overridden.
-    prefixes.importFromGraph(graph);
+    importedPrefixes = prefixes.importFromGraph(graph);
     assertEquals('http://www.example.com/#term', prefixes.resolve('t:term'));
+    assertEquals(prefixes, importedPrefixes);
     
     // Unless we say so.
-    prefixes.importFromGraph(graph, true);
+    importedPrefixes = prefixes.importFromGraph(graph, true);
     assertEquals('http://www.example.com/prefix#term', prefixes.resolve('t:term'));
+    assertEquals(prefixes, importedPrefixes);
     
     // Now we unset the values to be safe in future tests.
     prefixes.remove('t');

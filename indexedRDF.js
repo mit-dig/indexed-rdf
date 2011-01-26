@@ -71,7 +71,8 @@ IRDFPrefixMap.fn = IRDFPrefixMap.prototype = {
 	// This is slow!!
 	for (var prefix in this) {
 	    // Which CURIE to choose?  For now we pick the first.
-	    if (this[prefix].substr &&
+	    if (this[prefix] &&
+                this[prefix].substr &&
                 this[prefix].length < iri.length &&
 		this[prefix] == iri.substr(0, this[prefix].length)) {
 		// This might not be a valid CURIE!
@@ -92,6 +93,7 @@ IRDFPrefixMap.fn = IRDFPrefixMap.prototype = {
      * Import the prefixes from another PrefixMap into this PrefixMap.
      * @param prefixes {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-PrefixMap">PrefixMap</a>} The PrefixMap to import.
      * @param override {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-boolean">boolean</a>} If true, conflicting prefixes in the PrefixMap will be overridden by those in the imported PrefixMap.
+     * @return {IRDFPrefixMap} The instance on which import was called.
      * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-PrefixMap-import">PrefixMap#import</a>
      */
     import: function(prefixes, override) {
@@ -100,11 +102,14 @@ IRDFPrefixMap.fn = IRDFPrefixMap.prototype = {
 		this[prefix] = prefixes[prefix];
 	    }
 	}
+	
+	return this;
     },
     /**
      * Import the prefixes defined in a Graph into this PrefixMap.
      * @param graph {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-Graph">Graph</a>} A graph containing triples describing prefix mappings according to the <a href="http://www.w3.org/TR/2010/WD-rdfa-core-20100422/#s_profiles">RDFa Profile</a> specification.
-     * @param override {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-boolean">boolean</a>} If true, conflicting prefixes in the environment will be overridden by those in the imported Graph.
+     * @param override {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-boolean">boolean</a>} If true, conflicting prefixes in the PrefixMap will be overridden by those in the imported Graph.
+     * @return {IRDFPrefixMap} The instance on which importFromGraph was called.
      * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-PrefixMap-importFromGraph">PrefixMap#importFromGraph</a>
      */
     importFromGraph: function(graph, override) {
@@ -142,6 +147,163 @@ IRDFPrefixMap.fn = IRDFPrefixMap.prototype = {
 	};
 	
 	prefixGraph.forEach(addMapping(graph, override));
+	
+	return this;
+    }
+};
+
+/**
+ * @private
+ * @constructor Creates a new IRDFTermMap.
+ */
+var IRDFTermMap = function() { IRDFTermMap.fn.init(); };
+
+/**
+ * @class Implements <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-TermMap">TermMap</a>.
+ * @name IRDFTermMap
+ */
+IRDFTermMap.fn = IRDFTermMap.prototype = {
+    init: function() {
+	
+    },
+    
+    /**
+     * Get the IRI mapped to a particular term.
+     * @param term {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The term to find the mapping for.
+     * @return {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The resolved value of term, or null if no resolution is possible.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-TermMap-get">TermMap#get</a>
+     */
+    get: function(term) {
+	return this[term];
+    },
+    /**
+     * Set the IRI mapped to a particular term.
+     * @param term {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The term to be mapped.
+     * @param iri {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The IRI to be mapped to the term.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-TermMap-set">TermMap#set</a>
+     */
+    set: function(term, iri) {
+	this[term] = iri;
+    },
+    /**
+     * Remove mapping of a particular term.
+     * @param term {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The term for which a mapping is to be removed.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-TermMap-remove">TermMap#remove</a>
+     */
+    remove: function(term) {
+	delete this[term];
+    },
+    
+    // Return NULL?
+    // Case sensitivity?
+    /**
+     * Resolve a term into an IRI.
+     * @param term {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The term to resolve.
+     * @return {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The resolved value of term if the term is known, otherwise the concatenation of the default value and term (if a default is known), otherwise null.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-TermMap-resolve">TermMap#resolve</a>
+     */
+    resolve: function(term) {
+        if (this[term] != undefined) {
+	    return this[term];
+	} else if (this[''] != undefined) {
+	    return this[''] + term;
+	} else {
+	    return null;
+	}
+    },
+    /**
+     * Return the term for a given IRI.
+     * @param iri {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The IRI to be shrunk into a term.
+     * @return {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The term corresponding to iri, or iri if no matching term is known.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-TermMap-shrink">TermMap#shrink</a>
+     */
+    shrink: function(iri) {
+	// This is slow!!
+	for (var term in this) {
+	    // Which term to choose?  For now we pick the first.
+	    if (this[term] &&
+                this[term].substr &&
+                this[term].length == iri.length &&
+		this[term] == iri) {
+		// This might not be a valid term!
+		return term;
+	    }
+	}
+        if (this[''] != undefined &&
+            this[''].length < iri.length &&
+            this[''] == iri.substr(0, this[''].length)) {
+	    return iri.substr(this[''].length);
+	}
+	return iri;
+    },
+    /**
+     * Set the default IRI prefix to be used when resolving unidentified terms.
+     * @param iri {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The IRI to be set as the base IRI for terms.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-TermMap-setDefault">TermMap#setDefault</a>
+     */
+    setDefault: function(iri) {
+	this[''] = iri;
+    },
+    /**
+     * Import the terms from another TermMap into this TermMap.
+     * @param terms {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-TermMap">TermMap</a>} The TermMap to import.
+     * @param override {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-boolean">boolean</a>} If true, conflicting terms in the TermMap will be overridden by those in the imported TermMap.
+     * @return {IRDFTermMap} The instance on which import was called.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-TermMap-import">TermMap#import</a>
+     */
+    import: function(terms, override) {
+	for (var term in terms) {
+	    if (terms[term].substr && (this[term] == undefined || override)) {
+		this[term] = terms[term];
+	    }
+	}
+	
+	return this;
+    },
+    /**
+     * Import the terms defined in a Graph into this PrefixMap.
+     * @param graph {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-Graph">Graph</a>} A graph containing triples describing term mappings according to the <a href="http://www.w3.org/TR/2010/WD-rdfa-core-20100422/#s_profiles">RDFa Profile</a> specification.
+     * @param override {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-boolean">boolean</a>} If true, conflicting terms in the TermMap will be overridden by those in the imported Graph.
+     * @return {IRDFTermMap} The instance on which importFromGraph was called.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-TermMap-importFromGraph">TermMap#importFromGraph</a>
+     */
+    importFromGraph: function(graph, override) {
+	// Find all triples of the form "?s rdfa:term ?literal"
+	var filterTerms = new IRDFTripleFilter(function(triple) {
+	    return triple.property.equals(RDFA_TERM) &&
+	           triple.object.interfaceName == 'Literal';
+	});
+	var termGraph = graph.filter(filterTerms);
+	
+	// Add a mapping if we can also find a unique statement
+	// "?s rdfa:uri ?uri"
+	var addMapping = function(graph, override) {
+	    return new IRDFTripleCallback(function(triple) {
+		var mappingResource = triple.subject;
+		var term = triple.object.value;
+		
+		// If the term should be assigned, find the mapping.
+		if (this[term] == undefined || override) {
+		    var checkUnique = new IRDFTripleFilter(function(triple) {
+			return triple.subject.equals(mappingResource) &&
+			       triple.predicate.equals(RDFA_URI) &&
+			       triple.object.interfaceName == 'NamedNode';
+		    });
+		    var unique = graph.the(checkUnique);
+		    
+		    // What if it's not unique?
+		    if (unique) {
+			var uriGraph = graph.filter(checkUnique);
+			
+			this[term] = uriGraph.toArray()[0].object.value;
+		    }
+		}
+	    });
+	};
+	
+	termGraph.forEach(addMapping(graph, override));
+	
+	return this;
     }
 };
 
@@ -183,7 +345,7 @@ IRDFEnvironment.fn = IRDFEnvironment.prototype = {
 	 * The IRDFTermMap of the environment.
 	 * @type IRDFTermMap
 	 */
-//	this.envTerms = new IRDFTermMap();
+	this.envTerms = new IRDFTermMap();
     },
     
     /**
