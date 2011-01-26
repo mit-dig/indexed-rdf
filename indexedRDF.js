@@ -54,7 +54,7 @@ IRDFPrefixMap.fn = IRDFPrefixMap.prototype = {
      * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-PrefixMap-resolve">PrefixMap#resolve</a>
      */
     resolve: function(curie) {
-	curie = curie.split(':', 1);
+	curie = curie.split(':', 2);
 	if (this[curie[0]] != undefined) {
 	    return this[curie[0]] + curie[1]
 	} else {
@@ -71,8 +71,9 @@ IRDFPrefixMap.fn = IRDFPrefixMap.prototype = {
 	// This is slow!!
 	for (var prefix in this) {
 	    // Which CURIE to choose?  For now we pick the first.
-	    if (this[prefix].length < iri &&
-		this[prefix].substr(0, this[prefix].length) == iri) {
+	    if (this[prefix].substr &&
+                this[prefix].length < iri.length &&
+		this[prefix] == iri.substr(0, this[prefix].length)) {
 		// This might not be a valid CURIE!
 		return prefix + ':' + iri.substr(this[prefix].length);
 	    }
@@ -94,8 +95,8 @@ IRDFPrefixMap.fn = IRDFPrefixMap.prototype = {
      * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-PrefixMap-import">PrefixMap#import</a>
      */
     import: function(prefixes, override) {
-	for (var prefix in terms) {
-	    if (this[prefix] == undefined || override) {
+	for (var prefix in prefixes) {
+	    if (prefixes[prefix].substr && (this[prefix] == undefined || override)) {
 		this[prefix] = prefixes[prefix];
 	    }
 	}
@@ -182,7 +183,7 @@ IRDFEnvironment.fn = IRDFEnvironment.prototype = {
 	 * The IRDFTermMap of the environment.
 	 * @type IRDFTermMap
 	 */
-	this.envTerms = new IRDFTermMap();
+//	this.envTerms = new IRDFTermMap();
     },
     
     /**

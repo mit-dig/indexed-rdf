@@ -1,0 +1,433 @@
+<html>
+<head>
+<title>IRDFEnvironment Unit Tests</title>
+<script language="JavaScript" src="jsUnitCore.js"></script>
+<script language="JavaScript" src="../indexedRDF.js"></script>
+<script language="JavaScript">
+//<![CDATA[
+var testCount = 6;
+var env = null;
+
+function setUpPage() {
+    var req = window.indexedRDF.open("IRDFEnvironmentTest");
+    
+    req.onsuccess = function(evt) {
+        env = evt.result;
+        finishSetUp();
+    };
+    req.onerror = function(evt) {
+        finishSetUp();
+    };
+    
+    setUpPageStatus = 'running';
+}
+
+function finishSetUp() {
+    setUpPageStatus = 'complete';
+}
+
+function tearDown() {
+    // Tear down the store only at the end.
+    testCount--;
+    if (testCount == 0) {
+        window.indexedRDF.deleteStore("IRDFEnvironmentTest");
+    }
+}
+
+function testProperties() {
+    // IRDFEnvironment#base
+    assertEquals(null, env.base);
+    env.base = 'http://www.example.com/#';
+    assertEquals('http://www.example.com/#', env.base);
+
+    // IRDFEnvironment#name
+    assertEquals('IRDFEnvironmentTest', env.name);
+
+    // IRDFEnvironment#prefixes
+    // How to test??
+
+    // IRDFEnvironment#terms
+    // How to test??
+}
+
+function testResolve() {
+    // First try terms, then prefixes, then try resolving a relative IRI,
+    // before returning the IRI.
+    env.terms.set('term', 'http://www.example.com/terms#term');
+    env.terms.set('t:term', 'http://www.example.com/terms#term');
+    env.prefixes.set('t', 'http://www.example.com/prefixes#');
+    env.base = 'http://www.example.com/base/';
+    
+    // Try terms.
+    assertEquals('http://www.example.com/terms#term', env.resolve('term'));
+    assertEquals('http://www.example.com/terms#term', env.resolve('t:term'));
+    env.terms.remove('term');
+    env.terms.remove('t:term');
+
+    // Fall back on prefixes.
+    assertEquals('http://www.example.com/prefixes#term', env.resolve('t:term'));
+    env.prefixes.remove('t');
+    
+    // Finally fall back on the base.
+    assertEquals('http://www.example.com/base/term', env.resolve('term'));
+    assertEquals('http://www.example.com/base/t:term', env.resolve('t:term'));
+    env.base = null;
+
+    // Or just return the value if we can't do anything.
+    assertEquals('term', env.resolve('term'));
+    assertEquals('t:term', env.resolve('t:term'));
+}
+
+function testMapSetters() {
+    // setDefaultVocabulary, first
+    assertEquals('term', env.resolve('term'));
+    env.setDefaultVocabulary('http://www.example.com/#');
+    assertEquals('http://www.example.com/#term', env.resolve('term'));
+
+    // setDefaultPrefix, second
+    assertEquals(':term', env.resolve(':term'));
+    env.setDefaultPrefix('http://www.example.com/#');
+    assertEquals('http://www.example.com/#term', env.resolve(':term'));
+    
+    // setTerm
+    env.setTerm('term', 'http://www.example.com/term');
+    assertEquals('http://www.example.com/term', env.resolve('term'));
+    
+    // setPrefix
+    assertEquals('t:term', env.resolve('t:term'));
+    env.setPrefix('t', 'http://www.example.com/prefix#');
+    assertEquals('http://www.example.com/prefix#term', env.resolve('t:term'));
+}
+
+function testImportProfile() {
+    // importProfile
+    assertEquals('term', env.resolve('term'));
+    assertEquals('t:term', env.resolve('t:term'));
+    
+    // Create the new empty profile.
+    var profile = env.createProfile(undefined, true);
+    profile.setTerm('term', 'http://www.example.com/term');
+    profile.setPrefix('t', 'http://www.example.com/#');
+    
+    // This should have no effect on the environment.
+    assertEquals('term', env.resolve('term'));
+    assertEquals('t:term', env.resolve('t:term'));
+    assertEquals('http://www.example.com/term', profile.resolve('term'));
+    assertEquals('http://www.example.com/#term', profile.resolve('t:term'));
+    
+    // Importing it should, however.
+    env.importProfile(profile);
+    assertEquals('http://www.example.com/term', env.resolve('term'));
+    assertEquals('http://www.example.com/#term', env.resolve('t:term'));
+    assertEquals('http://www.example.com/term', profile.resolve('term'));
+    assertEquals('http://www.example.com/#term', profile.resolve('t:term'));
+
+    // Now we change the values in the profile we imported...
+    profile.setTerm('term', 'http://www.example.com/terms/term');
+    profile.setPrefix('t', 'http://www.example.com/prefix#');
+    
+    // Which should not change the environment.
+    assertEquals('http://www.example.com/term', env.resolve('term'));
+    assertEquals('http://www.example.com/#term', env.resolve('t:term'));
+    assertEquals('http://www.example.com/terms/term', profile.resolve('term'));
+    assertEquals('http://www.example.com/prefix#term', profile.resolve('t:term'));
+    
+    // And since the values are already set, they won't be overridden.
+    env.importProfile(profile);
+    assertEquals('http://www.example.com/term', env.resolve('term'));
+    assertEquals('http://www.example.com/#term', env.resolve('t:term'));
+    assertEquals('http://www.example.com/terms/term', profile.resolve('term'));
+    assertEquals('http://www.example.com/prefix#term', profile.resolve('t:term'));
+    
+    // Unless we say so.
+    env.importProfile(profile, true);
+    assertEquals('http://www.example.com/terms/term', env.resolve('term'));
+    assertEquals('http://www.example.com/prefix#term', env.resolve('t:term'));
+    assertEquals('http://www.example.com/terms/term', profile.resolve('term'));
+    assertEquals('http://www.example.com/prefix#term', profile.resolve('t:term'));
+    
+    // Now we unset the values to be safe in future tests.
+    env.setTerm('term', null);
+    env.setPrefix('t', null);
+    assertEquals('term', env.resolve('term'));
+    assertEquals('t:term', env.resolve('t:term'));
+}
+    
+function testImportProfileFromGraph() {
+    assertEquals('term', env.resolve('term'));
+    assertEquals('t:term', env.resolve('t:term'));
+    
+    // Create the new profile graph.
+    
+    // First the nodes.
+    var termNode = env.createBlankNode();
+    var rdfaTerm = env.createNamedNode('http://www.w3.org/ns/rdfa#keyword');
+    var termLiteral = env.createLiteral('term');
+    var termIRINode = env.createNamedNode('http://www.example.com/term');
+    
+    var prefixNode = env.createBlankNode();
+    var rdfaPrefix = env.createNamedNode('http://www.w3.org/ns/rdfa#prefix');
+    var prefixLiteral = env.createLiteral('t');
+    var prefixIRINode = env.createNamedNode('http://www.example.com/#');
+
+    var rdfaURI = env.createNamedNode('http://www.w3.org/ns/rdfa#uri');
+
+    // Then the triples.
+    var termName = env.createTriple(termNode, rdfaTerm, termLiteral);
+    var termIRI = env.createTriple(termNode, rdfaURI, termIRINode);
+    var prefixName = env.createTriple(prefixNode, rdfaPrefix, prefixLiteral);
+    var prefixIRI = env.createTriple(prefixNode, rdfaURI, prefixIRINode);
+    
+    // Finally, the graph.
+    var triples = [termName, termIRI, prefixName, prefixIRI];
+    var graph = env.createGraph(triples);
+    
+    // This should have no effect on the environment.
+    assertEquals('term', env.resolve('term'));
+    assertEquals('t:term', env.resolve('t:term'));
+    
+    // Importing it should, however.
+    env.importProfileFromGraph(graph);
+    assertEquals('http://www.example.com/term', env.resolve('term'));
+    assertEquals('http://www.example.com/#term', env.resolve('t:term'));
+
+    // Now we change the values in the profile we imported...
+    graph.remove(termIRI);
+    termIRINode = env.createNamedNode('http://www.example.com/terms/term');
+    termIRI = env.createTriple(termNode, rdfaURI, termIRINode);
+    graph.add(termIRI);
+
+    graph.remove(prefixIRI);
+    prefixIRINode = env.createNamedNode('http://www.example.com/prefix#');
+    prefixIRI = env.createTriple(prefixNode, rdfaURI, prefixIRINode);
+    graph.add(prefixIRI);
+    
+    // Which should not change the environment.
+    assertEquals('http://www.example.com/term', env.resolve('term'));
+    assertEquals('http://www.example.com/#term', env.resolve('t:term'));
+    
+    // And since the values are already set, they won't be overridden.
+    env.importProfileFromGraph(graph);
+    assertEquals('http://www.example.com/term', env.resolve('term'));
+    assertEquals('http://www.example.com/#term', env.resolve('t:term'));
+    
+    // Unless we say so.
+    env.importProfileFromGraph(profile, true);
+    assertEquals('http://www.example.com/terms/term', env.resolve('term'));
+    assertEquals('http://www.example.com/prefix#term', env.resolve('t:term'));
+    
+    // Now we unset the values to be safe in future tests.
+    env.setTerm('term', null);
+    env.setPrefix('t', null);
+    assertEquals('term', env.resolve('term'));
+    assertEquals('t:term', env.resolve('t:term'));
+}
+
+function testNodeConstructors() {
+    var o = env.createBlankNode();
+    assert(o instanceof IRDFBlankNode);
+
+    o = env.createNamedNode('http://www.example.com/');
+    assert(o instanceof IRDFNamedNode);
+    assertEquals('http://www.example.com/', o.value);
+
+    // Literal with no datatype or language
+    o = env.createLiteral('literal');
+    assert(o instanceof IRDFLiteral);
+    assertEquals('literal', o.value);
+    assertEquals(null, o.language);
+    assertEquals(null, o.datatype);
+    
+    o = env.createLiteral('literal', 'en');
+    assert(o instanceof IRDFLiteral);
+    assertEquals('literal', o.value);
+    assertEquals('en', o.language);
+    assertEquals(null, o.datatype);
+
+    o = env.createLiteral('literal', null, 'http://www.example.com/');
+    assert(o instanceof IRDFLiteral);
+    assertEquals('literal', o.value);
+    assertEquals(null, o.language);
+    assertEquals('http://www.example.com/', o.datatype);
+
+    o = env.createGraphLiteral();
+    assert(o instanceof IRDFGraphLiteral);
+    assertEquals(0, o.value.length);
+
+    // We'll test passing an argument later.
+
+    var s = env.createNamedNode('http://www.example.com/s');
+    var p = env.createNamedNode('http://www.example.com/p');
+    var o = env.createNamedNode('http://www.example.com/o');
+    var triple = env.createTriple(s, p, o);
+    assert(triple instanceof IRDFTriple);
+    assertEquals(s, triple.subject);
+    assertEquals(p, triple.property);
+    assertEquals(o, triple.object);
+
+    var graph = env.createGraph();
+    assert(graph instanceof IRDFGraph);
+    assertEquals(0, graph.length);
+
+    graph = env.createGraph([triple]);
+    assert(graph instanceof IRDFGraph);
+    assertEquals(1, graph.length);
+    assertEquals(triple, graph.toArray()[0]);
+
+    // And now back to graph literals.
+    o = env.createGraphLiteral(graph);
+    assert(o instanceof IRDFGraphLiteral);
+    assertNotEquals(graph, o.value);
+    assertEquals(1, o.value.length);
+    assertEquals(triple, o.value.toArray()[0]);
+}
+
+function testActionConstructor() {
+    var test = function(triple) {};
+    var action = function(triple) {};
+    o = env.createAction(test, action);
+    assert(o instanceof IRDFAction);
+    assertEquals(test, o.test);
+    assertEquals(action, o.action);
+}
+
+function testMapConstructors() {
+    // Set up the environment's maps for this test.
+    env.base = 'http://www.example.com/'
+    env.setTerm('term', 'http://www.example.com/#term');
+    env.setPrefix('t', 'http://www.example.com/terms#');
+
+    // Profile should do a copy by default except of the base.
+    o = env.createProfile();
+    assert(o instanceof IRDFProfile);
+    assertEquals(null, o.base);
+    assertEquals('http://www.example.com/#term', o.resolve('term'));
+    assertEquals('http://www.example.com/terms#term', o.resolve('t:term'));
+
+    // But it shouldn't have any effect on the main environment when it changes.
+    assertEquals('http://www.example.com/#term', env.resolve('term'));
+    assertEquals('http://www.example.com/terms#term', env.resolve('t:term'));
+    o.setTerm('term', 'http://www.example.com/#term2');
+    o.setPrefix('t', 'http://www.example.com/terms2#');
+    assertEquals('http://www.example.com/#term2', o.resolve('term'));
+    assertEquals('http://www.example.com/terms2#term', o.resolve('t:term'));
+    assertEquals('http://www.example.com/#term', env.resolve('term'));
+    assertEquals('http://www.example.com/terms#term', env.resolve('t:term'));
+
+    // We can set the base...
+    o = env.createProfile('http://www.example.com/#');
+    assert(o instanceof IRDFProfile);
+    assertEquals('http://www.example.com/#', o.base);
+    assertEquals('http://www.example.com/#term', o.resolve('term'));
+    assertEquals('http://www.example.com/terms#term', o.resolve('t:term'));
+
+    // But it shouldn't have any effect on the main environment when it changes.
+    assertEquals('http://www.example.com/#term', env.resolve('term'));
+    assertEquals('http://www.example.com/terms#term', env.resolve('t:term'));
+    o.setTerm('term', 'http://www.example.com/#term2');
+    o.setPrefix('t', 'http://www.example.com/terms2#');
+    assertEquals('http://www.example.com/#term2', o.resolve('term'));
+    assertEquals('http://www.example.com/terms2#term', o.resolve('t:term'));
+    assertEquals('http://www.example.com/#term', env.resolve('term'));
+    assertEquals('http://www.example.com/terms#term', env.resolve('t:term'));
+
+    // Set empty to false...
+    o = env.createProfile('http://www.example.com/#', false);
+    assert(o instanceof IRDFProfile);
+    assertEquals('http://www.example.com/#', o.base);
+    assertEquals('http://www.example.com/#term', o.resolve('term'));
+    assertEquals('http://www.example.com/terms#term', o.resolve('t:term'));
+
+    // But it shouldn't have any effect on the main environment when it changes.
+    assertEquals('http://www.example.com/#term', env.resolve('term'));
+    assertEquals('http://www.example.com/terms#term', env.resolve('t:term'));
+    o.setTerm('term', 'http://www.example.com/#term2');
+    o.setPrefix('t', 'http://www.example.com/terms2#');
+    assertEquals('http://www.example.com/#term2', o.resolve('term'));
+    assertEquals('http://www.example.com/terms2#term', o.resolve('t:term'));
+    assertEquals('http://www.example.com/#term', env.resolve('term'));
+    assertEquals('http://www.example.com/terms#term', env.resolve('t:term'));
+
+    // Set empty to true too...
+    o = env.createProfile(null, true);
+    assert(o instanceof IRDFProfile);
+    assertEquals(null, o.base);
+    assertEquals('term', o.resolve('term'));
+    assertEquals('t:term', o.resolve('t:term'));
+    
+    // But it shouldn't have any effect on the main environment when it changes.
+    assertEquals('http://www.example.com/#term', env.resolve('term'));
+    assertEquals('http://www.example.com/terms#term', env.resolve('t:term'));
+    o.setTerm('term', 'http://www.example.com/#term2');
+    o.setPrefix('t', 'http://www.example.com/terms2#');
+    assertEquals('http://www.example.com/#term2', o.resolve('term'));
+    assertEquals('http://www.example.com/terms2#term', o.resolve('t:term'));
+    assertEquals('http://www.example.com/#term', env.resolve('term'));
+    assertEquals('http://www.example.com/terms#term', env.resolve('t:term'));
+
+    // And the same applies to TermMap
+    o = env.createTermMap();
+    assert(o instanceof IRDFTermMap);
+    assertEquals('http://www.example.com/#term', o.resolve('term'));
+
+    assertEquals('http://www.example.com/#term', env.resolve('term'));
+    o.set('term', 'http://www.example.com/#term2');
+    assertEquals('http://www.example.com/#term2', o.resolve('term'));
+    assertEquals('http://www.example.com/#term', env.resolve('term'));
+
+    o = env.createTermMap(false);
+    assert(o instanceof IRDFTermMap);
+    assertEquals('http://www.example.com/#term', o.resolve('term'));
+
+    assertEquals('http://www.example.com/#term', env.resolve('term'));
+    o.set('term', 'http://www.example.com/#term2');
+    assertEquals('http://www.example.com/#term2', o.resolve('term'));
+    assertEquals('http://www.example.com/#term', env.resolve('term'));
+
+    o = env.createTermMap(true);
+    assert(o instanceof IRDFTermMap);
+    assertEquals('term', o.resolve('term'));
+
+    assertEquals('http://www.example.com/#term', env.resolve('term'));
+    o.set('term', 'http://www.example.com/#term2');
+    assertEquals('http://www.example.com/#term2', o.resolve('term'));
+    assertEquals('http://www.example.com/#term', env.resolve('term'));
+
+    // And also PrefixMap
+    o = env.createPrefixMap();
+    assert(o instanceof IRDFPrefixMap);
+    assertEquals('http://www.example.com/terms#term', o.resolve('t:term'));
+
+    assertEquals('http://www.example.com/terms#term', env.resolve('t:term'));
+    o.set('t', 'http://www.example.com/terms2#');
+    assertEquals('http://www.example.com/terms2#term', o.resolve('t:term'));
+    assertEquals('http://www.example.com/terms#term', env.resolve('t:term'));
+
+    o = env.createPrefixMap(false);
+    assert(o instanceof IRDFPrefixMap);
+    assertEquals('t:term', o.resolve('t:term'));
+
+    assertEquals('http://www.example.com/terms#term', env.resolve('t:term'));
+    o.set('t', 'http://www.example.com/terms2#');
+    assertEquals('http://www.example.com/terms2#term', o.resolve('t:term'));
+    assertEquals('http://www.example.com/terms#term', env.resolve('t:term'));
+
+    o = env.createPrefixMap(true);
+    assert(o instanceof IRDFPrefixMap);
+    assertEquals('http://www.example.com/terms#term', o.resolve('t:term'));
+
+    assertEquals('http://www.example.com/terms#term', env.resolve('t:term'));
+    o.set('t', 'http://www.example.com/terms2#');
+    assertEquals('http://www.example.com/terms2#term', o.resolve('t:term'));
+    assertEquals('http://www.example.com/terms#term', env.resolve('t:term'));
+}
+
+function testClose() {
+    // How to test this?
+}
+//]]>
+</script>
+</head>
+<body>
+</body>
+</html>
