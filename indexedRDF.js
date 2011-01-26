@@ -312,7 +312,7 @@ function resolveIRI(base, rel) {
  * @private
  * @constructor Creates a new IRDFPrefixMap.
  */
-var IRDFPrefixMap = function() { IRDFPrefixMap.fn.init(); };
+var IRDFPrefixMap = function() { IRDFPrefixMap.fn.init.apply(this); };
 
 /**
  * @class Implements <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-PrefixMap">PrefixMap</a>.
@@ -403,7 +403,9 @@ IRDFPrefixMap.fn = IRDFPrefixMap.prototype = {
      */
     import: function(prefixes, override) {
 	for (var prefix in prefixes) {
-	    if (prefixes[prefix].substr && (this[prefix] == undefined || override)) {
+	    if (prefixes[prefix] &&
+		prefixes[prefix].substr &&
+		(this[prefix] == undefined || override)) {
 		this[prefix] = prefixes[prefix];
 	    }
 	}
@@ -461,7 +463,7 @@ IRDFPrefixMap.fn = IRDFPrefixMap.prototype = {
  * @private
  * @constructor Creates a new IRDFTermMap.
  */
-var IRDFTermMap = function() { IRDFTermMap.fn.init(); };
+var IRDFTermMap = function() { IRDFTermMap.fn.init.apply(this); };
 
 /**
  * @class Implements <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-TermMap">TermMap</a>.
@@ -558,7 +560,9 @@ IRDFTermMap.fn = IRDFTermMap.prototype = {
      */
     import: function(terms, override) {
 	for (var term in terms) {
-	    if (terms[term].substr && (this[term] == undefined || override)) {
+	    if (terms[term] &&
+		terms[term].substr &&
+		(this[term] == undefined || override)) {
 		this[term] = terms[term];
 	    }
 	}
@@ -614,85 +618,61 @@ IRDFTermMap.fn = IRDFTermMap.prototype = {
 
 /**
  * @private
- * @constructor Creates a new IRDFEnvironment with the specified indexedDB backing store.
- * @param db {<a href="http://www.w3.org/TR/IndexedDB/#idl-def-IDBDatabase">IDBDatabase</a>} The indexedDB database to use as a backing store for the IRDFEnvironment.
+ * @constructor Creates a new IRDFProfile.
+ * @param base {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The base IRI of the new profile.
  */
-var IRDFEnvironment = function(db) { IRDFEnvironment.fn.init(db); };
+var IRDFProfile = function(base) { IRDFProfile.fn.init.apply(this, [base]); };
 
 /**
- * @class Implements <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-RDFEnvironment">RDFEnvironment</a>.
- * @name IRDFEnvironment
+ * @class Implements <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-Profile">Profile</a>.
+ * @name IRDFProfile
  */
-IRDFEnvironment.fn = IRDFEnvironment.prototype = {
-    init: function(db) {
+IRDFProfile.fn = IRDFProfile.prototype = {
+    init: function(base) {
 	/**
-	 * @private
-	 * The indexedDB backing store.
-	 * @type <a href="http://www.w3.org/TR/IndexedDB/#idl-def-IDBDatabase">IDBDatabase</a>
-	 */
-	this.db = db;
-	/**
-	 * The base IRI used to resolve relative IRIs in the environment.
+	 * The base IRI used to resolve relative IRIs in the profile.
 	 * @type <a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>
 	 * @default null
 	 * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Profile-base">Profile#base</a>
 	 */
 	this.base = null;
+	if (base !== undefined) {
+	    this.base = base;
+	}
 	
 	/**
 	 * @private
-	 * The IRDFPrefixMap of the environment.
+	 * The IRDFPrefixMap of the profile.
 	 * @type IRDFPrefixMap
 	 */
-	this.envPrefixes = new IRDFPrefixMap();
+	this._prefixes = new IRDFPrefixMap();
 	/**
 	 * @private
-	 * The IRDFTermMap of the environment.
+	 * The IRDFTermMap of the profile.
 	 * @type IRDFTermMap
 	 */
-	this.envTerms = new IRDFTermMap();
+	this._terms = new IRDFTermMap();
     },
     
     /**
-     * The name of the environment's store.
+     * The mapping of RDF prefix strings to base IRIs in the profile.
      * @field
-     * @name IRDFEnvironment#name
-     * @type <a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>, readonly
-     * @see <a href="http://www.w3.org/TR/IndexedDB/#widl-IDBDatabase-name">IDBDatabase#name</a>
-     */
-    get name() {
-	return this.db.name;
-    },
-    /**
-     * The description of the environment's store at the time of opening.
-     * @field
-     * @name IRDFEnvironment#description
-     * @type <a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>, readonly
-     * @see <a href="http://www.w3.org/TR/IndexedDB/#widl-IDBDatabase-description">IDBDatabase#description</a>
-     */
-    get description() {
-	return this.db.description;
-    },
-    
-    /**
-     * The mapping of RDF prefix strings to base IRIs in the environment.
-     * @field
-     * @name IRDFEnvironment#prefixes
+     * @name IRDFProfile#prefixes
      * @type IRDFPrefixMap, readonly
      * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Profile-prefixes">Profile#prefixes</a>
      */
     get prefixes() {
-	return this.envPrefixes;
+	return this._prefixes;
     },
     /**
-     * The mapping of terms to IRIs in the environment.
+     * The mapping of terms to IRIs in the profile.
      * @field
-     * @name IRDFEnvironment#terms
+     * @name IRDFProfile#terms
      * @type IRDFTermMap, readonly
      * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Profile-terms">Profile#terms</a>
      */
     get terms() {
-	return this.envTerms;
+	return this._terms;
     },
     
     // How does this resolve a relative IRI?  Should prefixes resolve return NU??
@@ -719,7 +699,7 @@ IRDFEnvironment.fn = IRDFEnvironment.prototype = {
     
     /**
      * Set the default vocabulary to be used to resolve unknown terms.
-     * It is identical to calling IRDFEnvironment#terms#setDefault(iri).
+     * It is identical to calling IRDFProfile#terms#setDefault(iri).
      * @param iri {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The IRI to be used as the default vocabulary.
      * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Profile-setDefaultVocabulary">Profile#setDefaultVocabulary</a>
      */
@@ -728,7 +708,7 @@ IRDFEnvironment.fn = IRDFEnvironment.prototype = {
     },
     /**
      * Set the default prefix to be used to resolve CURIEs which lack one.
-     * It is identical to calling IRDFEnvironment#prefixes#setDefault(iri).
+     * It is identical to calling IRDFProfile#prefixes#setDefault(iri).
      * @param iri {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The IRI to be used as the default prefix.
      * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Profile-setDefaultPrefix">Profile#setDefaultPrefix</a>
      */
@@ -737,7 +717,7 @@ IRDFEnvironment.fn = IRDFEnvironment.prototype = {
     },
     /**
      * Associate an IRI with a term.
-     * It is identical to calling IRDFEnvironment#terms#set(term, iri).
+     * It is identical to calling IRDFProfile#terms#set(term, iri).
      * @param term {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The term to set. Must be a valid NCName.
      * @param iri {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The IRI to be associated with the term.
      * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Profile-setTerm">Profile#setTerm</a>
@@ -747,7 +727,7 @@ IRDFEnvironment.fn = IRDFEnvironment.prototype = {
     },
     /**
      * Associate an IRI with a prefix.
-     * It is identical to calling IRDFEnvironment#prefixes#set(term, iri).
+     * It is identical to calling IRDFProfile#prefixes#set(term, iri).
      * @param term {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The prefix to set. Must be a valid NCName.
      * @param iri {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The IRI to be associated with the prefix.
      * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Profile-setPrefix">Profile#setPrefix</a>
@@ -756,9 +736,9 @@ IRDFEnvironment.fn = IRDFEnvironment.prototype = {
 	this.prefixes.set(prefix, iri);
     },
     /**
-     * Import the terms and prefixes from another profile into the environment.
+     * Import the terms and prefixes from another profile into this Profile.
      * @param profile {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-Profile">Profile</a>} The Profile to import.
-     * @param override {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-boolean">boolean</a>} If true, conflicting terms and prefixes in the environment will be overridden by those in the imported Profile.
+     * @param override {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-boolean">boolean</a>} If true, conflicting terms and prefixes in the profile will be overridden by those in the imported Profile.
      * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Profile-importProfile">Profile#importProfile</a>
      */
     importProfile: function(profile, override) {
@@ -766,135 +746,189 @@ IRDFEnvironment.fn = IRDFEnvironment.prototype = {
 	this.terms.import(profile.terms, override);
     },
     /**
-     * Import the terms and prefixes defined in a Graph into the environment.
+     * Import the terms and prefixes defined in a Graph into this Profile.
      * @param graph {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-Graph">Graph</a>} A graph containing triples describing term and prefix mappings according to the <a href="http://www.w3.org/TR/2010/WD-rdfa-core-20100422/#s_profiles">RDFa Profile</a> specification.
-     * @param override {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-boolean">boolean</a>} If true, conflicting terms and prefixes in the environment will be overridden by those in the imported Graph.
+     * @param override {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-boolean">boolean</a>} If true, conflicting terms and prefixes in the profile will be overridden by those in the imported Graph.
      * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Profile-importProfileFromGraph">Profile#importProfileFromGraph</a>
      */
     importProfileFromGraph: function(graph, override) {
 	this.prefixes.importFromGraph(graph, override);
 	this.terms.importFromGraph(graph, override);
-    },
-    
-    /**
-     * Create a new blank node in the environment.
-     * @return {IRDFBlankNode} The new blank node.
-     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createBlankNode">RDFEnvironment#createBlankNode</a>
-     */
-    createBlankNode: function() {
-	return new IRDFBlankNode();
-    },
-    
-    /**
-     * Create a new named node in the environment.
-     * @param iri {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The lexical value of the IRI of the node to create.
-     * @return {IRDFNamedNode} The new named node.
-     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createNamedNode">RDFEnvironment#createNamedNode</a>
-     */
-    createNamedNode: function(iri) {
-	return new IRDFNamedNode(iri);
-    },
-    
-    // What are the supported datatypes?
-    /**
-     * Create a new literal in the environment.
-     * @param value {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-any">any</a>} The value of the literal.  The value must respond to toString().
-     * @param language {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>, optional} The language code associated with the literal, specified according to <a href="http://tools.ietf.org/rfc/bcp/bcp47.txt">BCP47</a>.
-     * @param datatype {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>, optional} The datatype associated with the literal.  This value may be specified as a full IRI or CURIE.
-     * @return {IRDFLiteral} The new literal.
-     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createLiteral">RDFEnvironment#createLiteral</a>
-     */
-    createLiteral: function(value, language, datatype) {
-	return new IRDFLiteral(value, language, datatype);
-    },
-    
-    /**
-     * Create a new graph literal in the environment.
-     * @param graph {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-Graph">Graph</a>, optional} The graph represented by the graph literal.  If not specified, an empty graph will be created.
-     * @return {IRDFGraphLiteral} The new graph literal.
-     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createGraphLiteral">RDFEnvironment#createGraphLiteral</a>
-     */
-    createGraphLiteral: function(graph) {
-	return new IRDFGraphLiteral(graph);
-    },
-    
-    /**
-     * Create a new triple in the environment.
-     * @param subject {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-RDFNode">RDFNode</a>} The node to be used as the subject of the triple.
-     * @param property {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-RDFNode">RDFNode</a>} The node to be used as the property of the triple.
-     * @param object {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-RDFNode">RDFNode</a>} The node to be used as the object of the triple.
-     * @return {IRDFTriple} The new triple.
-     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createTriple">RDFEnvironment#createTriple</a>
-     */
-    createTriple: function(subject, property, object) {
-	return new IRDFTriple(subject, property, object);
-    },
-    
-    /**
-     * Create a new graph in the environment.
-     * @param triples {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-Triple">[]Triple</a>, optional} An array of Triples to be added to the created graph.
-     * @return {IRDFGraph} The new graph.
-     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createGraph">RDFEnvironment#createGraph</a>
-     */
-    createGraph: function(triples) {
-	return new IRDFGraph(triples);
-    },
-    
-    /**
-     * Create a new action in the environment.
-     * @param test {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-TripleFilter">TripleFilter</a>} A filter against which to test Triples.
-     * @param action {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-TripleCallback">TripleCallback</a>} A callback action to run for each Triple which passes the test.
-     * @return {IRDFTripleAction} The new triple action.
-     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createAction">RDFEnvironment#createAction</a>
-     */
-    createAction: function(test, action) {
-	return new IRDFTripleAction(test, action);
-    },
-    
-    /**
-     * Create a new profile in the environment.
-     * @param base {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>, optional} The IRI to use as the base IRI of the new profile.
-     * @param empty {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-boolean">boolean</a>, optional} If true, then the new profile will contain an empty TermMap and PrefixMap.  Otherwise, the current environment's TermMap and PrefixMaps will be copied to the new profile.
-     * @return {IRDFProfile} The new profile.
-     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createProfile">RDFEnvironment#createProfile</a>
-     */
-    createProfile: function(base, empty) {
-	return new IRDFProfile(base, empty);
-    },
-    
-    /**
-     * Create a new term map in the environment.
-     * @param empty {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-boolean">boolean</a>, optional} If true, then an empty TermMap will be returned.  Otherwise, a copy of the current environment's TermMap will be returned.
-     * @return {IRDFTermMap} The new term map.
-     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createTermMap">RDFEnvironment#createTermMap</a>
-     */
-    createTermMap: function(empty) {
-	return new IRDFTermMap(empty);
-    },
-    
-    /**
-     * Create a new prefix map in the environment.
-     * @param empty {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-boolean">boolean</a>, optional} If true, then an empty PrefixMap will be returned.  Otherwise, a copy of the current environment's PrefixMap will be returned.
-     * @return {IRDFPrefixMap} The new prefix map.
-     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createPrefixMap">RDFEnvironment#createPrefixMap</a>
-     */
-    createPrefixMap: function(empty) {
-	return new IRDFPrefixMap(empty);
-    },
-    
-    /**
-     * Close the current environment.
-     */
-    close: function() {
-	this.db.close();
     }
 };
 
 /**
  * @private
+ * @constructor Creates a new IRDFEnvironment with the specified indexedDB backing store.
+ * @param db {<a href="http://www.w3.org/TR/IndexedDB/#idl-def-IDBDatabase">IDBDatabase</a>} The indexedDB database to use as a backing store for the IRDFEnvironment.
+ */
+var IRDFEnvironment = function(db) {
+    IRDFEnvironment.fn.init.apply(this, [db]);
+};
+
+/**
+ * @class Implements <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-RDFEnvironment">RDFEnvironment</a>.
+ * @name IRDFEnvironment
+ * @augments IRDFProfile
+ */
+IRDFEnvironment.prototype = new IRDFProfile();
+IRDFEnvironment.prototype.init = function(db) {
+    IRDFProfile.prototype.init.apply(this);
+    
+    /**
+     * @private
+     * The indexedDB backing store.
+     * @type <a href="http://www.w3.org/TR/IndexedDB/#idl-def-IDBDatabase">IDBDatabase</a>
+     */
+    this.db = db;
+};
+
+/**
+ * The name of the environment's store.
+ * @field
+ * @name IRDFEnvironment#name
+ * @type <a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>, readonly
+ * @see <a href="http://www.w3.org/TR/IndexedDB/#widl-IDBDatabase-name">IDBDatabase#name</a>
+ */
+IRDFEnvironment.prototype.__defineGetter__('name', function() {
+    return this.db.name;
+});
+
+/**
+ * Create a new blank node in the environment.
+ * @return {IRDFBlankNode} The new blank node.
+ * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createBlankNode">RDFEnvironment#createBlankNode</a>
+ */
+IRDFEnvironment.prototype.createBlankNode = function() {
+    return new IRDFBlankNode();
+};
+    
+/**
+ * Create a new named node in the environment.
+ * @param iri {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The lexical value of the IRI of the node to create.
+ * @return {IRDFNamedNode} The new named node.
+ * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createNamedNode">RDFEnvironment#createNamedNode</a>
+ */
+IRDFEnvironment.prototype.createNamedNode = function(iri) {
+    return new IRDFNamedNode(iri);
+};
+
+// What are the supported datatypes?
+/**
+ * Create a new literal in the environment.
+ * @param value {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-any">any</a>} The value of the literal.  The value must respond to toString().
+ * @param language {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>, optional} The language code associated with the literal, specified according to <a href="http://tools.ietf.org/rfc/bcp/bcp47.txt">BCP47</a>.
+ * @param datatype {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>, optional} The datatype associated with the literal.  This value may be specified as a full IRI or CURIE.
+ * @return {IRDFLiteral} The new literal.
+ * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createLiteral">RDFEnvironment#createLiteral</a>
+ */
+IRDFEnvironment.prototype.createLiteral = function(value, language, datatype) {
+    return new IRDFLiteral(value, language, datatype);
+};
+
+/**
+ * Create a new graph literal in the environment.
+ * @param graph {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-Graph">Graph</a>, optional} The graph represented by the graph literal.  If not specified, an empty graph will be created.
+ * @return {IRDFGraphLiteral} The new graph literal.
+ * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createGraphLiteral">RDFEnvironment#createGraphLiteral</a>
+ */
+IRDFEnvironment.prototype.createGraphLiteral = function(graph) {
+    return new IRDFGraphLiteral(graph);
+};
+
+/**
+ * Create a new triple in the environment.
+ * @param subject {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-RDFNode">RDFNode</a>} The node to be used as the subject of the triple.
+ * @param property {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-RDFNode">RDFNode</a>} The node to be used as the property of the triple.
+ * @param object {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-RDFNode">RDFNode</a>} The node to be used as the object of the triple.
+ * @return {IRDFTriple} The new triple.
+ * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createTriple">RDFEnvironment#createTriple</a>
+ */
+IRDFEnvironment.prototype.createTriple = function(subject, property, object) {
+    return new IRDFTriple(subject, property, object);
+};
+
+/**
+ * Create a new graph in the environment.
+ * @param triples {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-Triple">[]Triple</a>, optional} An array of Triples to be added to the created graph.
+ * @return {IRDFGraph} The new graph.
+ * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createGraph">RDFEnvironment#createGraph</a>
+ */
+IRDFEnvironment.prototype.createGraph = function(triples) {
+    return new IRDFGraph(triples);
+};
+
+/**
+ * Create a new action in the environment.
+ * @param test {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-TripleFilter">TripleFilter</a>} A filter against which to test Triples.
+ * @param action {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-TripleCallback">TripleCallback</a>} A callback action to run for each Triple which passes the test.
+ * @return {IRDFTripleAction} The new triple action.
+ * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createAction">RDFEnvironment#createAction</a>
+ */
+IRDFEnvironment.prototype.createAction = function(test, action) {
+    return new IRDFTripleAction(test, action);
+};
+
+/**
+ * Create a new profile in the environment.
+ * @param base {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>, optional} The IRI to use as the base IRI of the new profile.
+ * @param empty {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-boolean">boolean</a>, optional} If true, then the new profile will contain an empty TermMap and PrefixMap.  Otherwise, the current environment's TermMap and PrefixMaps will be copied to the new profile.
+ * @return {IRDFProfile} The new profile.
+ * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createProfile">RDFEnvironment#createProfile</a>
+ */
+IRDFEnvironment.prototype.createProfile = function(base, empty) {
+    var profile = new IRDFProfile(base);
+    if (empty !== true) {
+	profile.importProfile(this, true);
+    }
+    
+    return profile;
+};
+
+/**
+ * Create a new term map in the environment.
+ * @param empty {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-boolean">boolean</a>, optional} If true, then an empty TermMap will be returned.  Otherwise, a copy of the current environment's TermMap will be returned.
+ * @return {IRDFTermMap} The new term map.
+ * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createTermMap">RDFEnvironment#createTermMap</a>
+ */
+IRDFEnvironment.prototype.createTermMap = function(empty) {
+    var map = new IRDFTermMap();
+    if (empty !== true) {
+	map.import(this.terms);
+    }
+    
+    return map;
+};
+
+/**
+ * Create a new prefix map in the environment.
+ * @param empty {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-boolean">boolean</a>, optional} If true, then an empty PrefixMap will be returned.  Otherwise, a copy of the current environment's PrefixMap will be returned.
+ * @return {IRDFPrefixMap} The new prefix map.
+ * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createPrefixMap">RDFEnvironment#createPrefixMap</a>
+ */
+IRDFEnvironment.prototype.createPrefixMap = function(empty) {
+    var map = new IRDFPrefixMap();
+    if (empty !== true) {
+	map.import(this.prefixes);
+    }
+    
+    return map;
+};
+
+/**
+ * Close the current environment.
+ */
+IRDFEnvironment.prototype.close = function() {
+    this.db.close();
+};
+
+IRDFEnvironment.fn = IRDFEnvironment.prototype;
+
+/**
+ * @private
  * @constructor Creates an EventListenerWrapper
  */
-var EventListenerWrapper = function() { EventListenerWrapper.fn.init(); };
+var EventListenerWrapper = function() { EventListenerWrapper.fn.init.apply(this); };
 
 /**
  * @private
@@ -927,7 +961,7 @@ EventListenerWrapper.fn = EventListenerWrapper.prototype = {
  * @constructor Creates a new IRDFRequest.
  * @param idbRequest {<a href="http://www.w3.org/TR/IndexedDB/#idl-def-IDBRequest">IDBRequest</a>} The indexedDB request object encapsulated for use with indexedRDF.
  */
-var IRDFRequest = function(idbRequest) { IRDFRequest.fn.init(idbRequest); };
+var IRDFRequest = function(idbRequest) { IRDFRequest.fn.init.apply(this, [idbRequest]); };
 
 /**
  * @class An asynchronous request object used to signal store-open events in indexedRDF, like <a href="http://www.w3.org/TR/IndexedDB/#idl-def-IDBRequest">IDBRequest</a> for indexedDB.
@@ -1227,6 +1261,30 @@ IRDFFactory.prototype = {
  * The global window object.
  * @name window
  */
+
+/**
+ * The IRDFPrefixMap class (for reference to IRDFPrefixMap constants).
+ * @name window#IRDFPrefixMap
+ */
+window.IRDFPrefixMap = IRDFPrefixMap;
+
+/**
+ * The IRDFTermMap class (for reference to IRDFTermMap constants).
+ * @name window#IRDFTermMap
+ */
+window.IRDFTermMap = IRDFTermMap;
+
+/**
+ * The IRDFProfile class (for reference to IRDFProfile constants).
+ * @name window#IRDFProfile
+ */
+window.IRDFProfile = IRDFProfile;
+
+/**
+ * The IRDFEnvironment class (for reference to IRDFEnvironment constants).
+ * @name window#IRDFEnvironment
+ */
+window.IRDFEnvironment = IRDFEnvironment;
 
 /**
  * The IRDFRequest class (for reference to IRDFRequest constants).

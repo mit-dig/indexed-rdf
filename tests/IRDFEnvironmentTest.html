@@ -5,7 +5,7 @@
 <script language="JavaScript" src="../indexedRDF.js"></script>
 <script language="JavaScript">
 //<![CDATA[
-var testCount = 6;
+var testCount = 9;
 var env = null;
 
 function setUpPage() {
@@ -39,6 +39,7 @@ function testProperties() {
     assertNull(env.base);
     env.base = 'http://www.example.com/#';
     assertEquals('http://www.example.com/#', env.base);
+    env.base = null;
 
     // IRDFEnvironment#name
     assertEquals('IRDFEnvironmentTest', env.name);
@@ -414,7 +415,7 @@ function testMapConstructors() {
 
     o = env.createPrefixMap(false);
     assert(o instanceof IRDFPrefixMap);
-    assertNull(o.resolve('t:term'));
+    assertEquals('http://www.example.com/terms#term', o.resolve('t:term'));
 
     assertEquals('http://www.example.com/terms#term', env.resolve('t:term'));
     o.set('t', 'http://www.example.com/terms2#');
@@ -423,7 +424,7 @@ function testMapConstructors() {
 
     o = env.createPrefixMap(true);
     assert(o instanceof IRDFPrefixMap);
-    assertEquals('http://www.example.com/terms#term', o.resolve('t:term'));
+    assertNull(o.resolve('t:term'));
 
     assertEquals('http://www.example.com/terms#term', env.resolve('t:term'));
     o.set('t', 'http://www.example.com/terms2#');

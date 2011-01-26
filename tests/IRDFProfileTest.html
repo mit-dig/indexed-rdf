@@ -1,0 +1,240 @@
+<html>
+<head>
+<title>IRDFProfile Unit Tests</title>
+<script language="JavaScript" src="jsUnitCore.js"></script>
+<script language="JavaScript" src="../indexedRDF.js"></script>
+<script language="JavaScript">
+//<![CDATA[
+var testCount = 5;
+var env = null;
+var profile = null;
+
+function setUpPage() {
+    var req = window.indexedRDF.open("IRDFProfileTest");
+    
+    req.onsuccess = function(evt) {
+        env = evt.result;
+        finishSetUp();
+    };
+    req.onerror = function(evt) {
+        finishSetUp();
+    };
+    
+    setUpPageStatus = 'running';
+}
+
+function finishSetUp() {
+    profile = env.createProfile(undefined, true);
+    setUpPageStatus = 'complete';
+}
+
+function tearDown() {
+    // Tear down the store only at the end.
+    testCount--;
+    if (testCount == 0) {
+        window.indexedRDF.deleteStore("IRDFProfileTest");
+    }
+}
+
+function testProperties() {
+    // IRDFProfile#base
+    assertNull(profile.base);
+    profile.base = 'http://www.example.com/#';
+    assertEquals('http://www.example.com/#', profile.base);
+    profile.base = null;
+
+    // IRDFProfile#prefixes
+    // How to test??
+
+    // IRDFProfile#terms
+    // How to test??
+}
+
+function testResolve() {
+    // First try terms, then prefixes, then try resolving a relative IRI,
+    // before returning the IRI.
+    profile.terms.set('term', 'http://www.example.com/terms#term');
+    profile.terms.set('t:term', 'http://www.example.com/terms#term');
+    profile.prefixes.set('t', 'http://www.example.com/prefixes#');
+    profile.base = 'http://www.example.com/base/';
+    
+    // Try terms.
+    assertEquals('http://www.example.com/terms#term', profile.resolve('term'));
+    assertEquals('http://www.example.com/terms#term', profile.resolve('t:term'));
+    profile.terms.remove('term');
+    profile.terms.remove('t:term');
+
+    // Fall back on prefixes.
+    assertEquals('http://www.example.com/prefixes#term', profile.resolve('t:term'));
+    profile.prefixes.remove('t');
+
+    // Use the base to resolve relative terms and prefixes.
+    profile.terms.set('t:term', 'term');
+    profile.prefixes.set('t', '../terms#');
+    
+    assertEquals('http://www.example.com/base/term', profile.resolve('t:term'));
+    profile.terms.remove('t:term');
+    assertEquals('http://www.example.com/terms#term', profile.resolve('t:term'));
+    profile.prefixes.remove('t');
+
+    // Otherwise return null.
+    assertNull(profile.resolve('term'));
+    assertNull(profile.resolve('t:term'));
+    profile.base = null;
+}
+
+function testMapSetters() {
+    // setDefaultVocabulary, first
+    assertNull(profile.resolve('term'));
+    profile.setDefaultVocabulary('http://www.example.com/#');
+    assertEquals('http://www.example.com/#term', profile.resolve('term'));
+    profile.setDefaultVocabulary(null);
+
+    // setDefaultPrefix, second
+    assertNull(profile.resolve(':term'));
+    profile.setDefaultPrefix('http://www.example.com/#');
+    assertEquals('http://www.example.com/#term', profile.resolve(':term'));
+    profile.setDefaultPrefix(null);
+    
+    // setTerm
+    profile.setTerm('term', 'http://www.example.com/term');
+    assertEquals('http://www.example.com/term', profile.resolve('term'));
+    profile.setTerm('term', null);
+    
+    // setPrefix
+    assertNull(profile.resolve('t:term'));
+    profile.setPrefix('t', 'http://www.example.com/prefix#');
+    assertEquals('http://www.example.com/prefix#term', profile.resolve('t:term'));
+    profile.setPrefix('t', null);
+}
+
+function testImportProfile() {
+    // importProfile
+    assertNull(profile.resolve('term'));
+    assertNull(profile.resolve('t:term'));
+    
+    // Create the new empty profile.
+    var newProfile = env.createProfile(undefined, true);
+    newProfile.setTerm('term', 'http://www.example.com/term');
+    newProfile.setPrefix('t', 'http://www.example.com/#');
+    
+    // This should have no effect on the profileironment.
+    assertNull(profile.resolve('term'));
+    assertNull(profile.resolve('t:term'));
+    assertEquals('http://www.example.com/term', newProfile.resolve('term'));
+    assertEquals('http://www.example.com/#term', newProfile.resolve('t:term'));
+    
+    // Importing it should, however.
+    profile.importProfile(newProfile);
+    assertEquals('http://www.example.com/term', profile.resolve('term'));
+    assertEquals('http://www.example.com/#term', profile.resolve('t:term'));
+    assertEquals('http://www.example.com/term', newProfile.resolve('term'));
+    assertEquals('http://www.example.com/#term', newProfile.resolve('t:term'));
+
+    // Now we change the values in the profile we imported...
+    newProfile.setTerm('term', 'http://www.example.com/terms/term');
+    newProfile.setPrefix('t', 'http://www.example.com/prefix#');
+    
+    // Which should not change the profileironment.
+    assertEquals('http://www.example.com/term', profile.resolve('term'));
+    assertEquals('http://www.example.com/#term', profile.resolve('t:term'));
+    assertEquals('http://www.example.com/terms/term', newProfile.resolve('term'));
+    assertEquals('http://www.example.com/prefix#term', newProfile.resolve('t:term'));
+    
+    // And since the values are already set, they won't be overridden.
+    profile.importProfile(newProfile);
+    assertEquals('http://www.example.com/term', profile.resolve('term'));
+    assertEquals('http://www.example.com/#term', profile.resolve('t:term'));
+    assertEquals('http://www.example.com/terms/term', newProfile.resolve('term'));
+    assertEquals('http://www.example.com/prefix#term', newProfile.resolve('t:term'));
+    
+    // Unless we say so.
+    profile.importProfile(newProfile, true);
+    assertEquals('http://www.example.com/terms/term', profile.resolve('term'));
+    assertEquals('http://www.example.com/prefix#term', profile.resolve('t:term'));
+    assertEquals('http://www.example.com/terms/term', newProfile.resolve('term'));
+    assertEquals('http://www.example.com/prefix#term', newProfile.resolve('t:term'));
+    
+    // Now we unset the values to be safe in future tests.
+    profile.setTerm('term', null);
+    profile.setPrefix('t', null);
+    assertNull(profile.resolve('term'));
+    assertNull(profile.resolve('t:term'));
+}
+    
+function testImportProfileFromGraph() {
+    assertNull(profile.resolve('term'));
+    assertNull(profile.resolve('t:term'));
+    
+    // Create the new profile graph.
+    
+    // First the nodes.
+    var termNode = env.createBlankNode();
+    var rdfaTerm = env.createNamedNode('http://www.w3.org/ns/rdfa#term');
+    var termLiteral = env.createLiteral('term');
+    var termIRINode = env.createNamedNode('http://www.example.com/term');
+    
+    var prefixNode = env.createBlankNode();
+    var rdfaPrefix = env.createNamedNode('http://www.w3.org/ns/rdfa#prefix');
+    var prefixLiteral = env.createLiteral('t');
+    var prefixIRINode = env.createNamedNode('http://www.example.com/#');
+
+    var rdfaURI = env.createNamedNode('http://www.w3.org/ns/rdfa#uri');
+
+    // Then the triples.
+    var termName = env.createTriple(termNode, rdfaTerm, termLiteral);
+    var termIRI = env.createTriple(termNode, rdfaURI, termIRINode);
+    var prefixName = env.createTriple(prefixNode, rdfaPrefix, prefixLiteral);
+    var prefixIRI = env.createTriple(prefixNode, rdfaURI, prefixIRINode);
+    
+    // Finally, the graph.
+    var triples = [termName, termIRI, prefixName, prefixIRI];
+    var graph = env.createGraph(triples);
+    
+    // This should have no effect on the profileironment.
+    assertNull(profile.resolve('term'));
+    assertNull(profile.resolve('t:term'));
+    
+    // Importing it should, however.
+    profile.importProfileFromGraph(graph);
+    assertEquals('http://www.example.com/term', profile.resolve('term'));
+    assertEquals('http://www.example.com/#term', profile.resolve('t:term'));
+
+    // Now we change the values in the profile we imported...
+    graph.remove(termIRI);
+    termIRINode = profile.createNamedNode('http://www.example.com/terms/term');
+    termIRI = profile.createTriple(termNode, rdfaURI, termIRINode);
+    graph.add(termIRI);
+
+    graph.remove(prefixIRI);
+    prefixIRINode = profile.createNamedNode('http://www.example.com/prefix#');
+    prefixIRI = profile.createTriple(prefixNode, rdfaURI, prefixIRINode);
+    graph.add(prefixIRI);
+    
+    // Which should not change the profileironment.
+    assertEquals('http://www.example.com/term', profile.resolve('term'));
+    assertEquals('http://www.example.com/#term', profile.resolve('t:term'));
+    
+    // And since the values are already set, they won't be overridden.
+    profile.importProfileFromGraph(graph);
+    assertEquals('http://www.example.com/term', profile.resolve('term'));
+    assertEquals('http://www.example.com/#term', profile.resolve('t:term'));
+    
+    // Unless we say so.
+    profile.importProfileFromGraph(profile, true);
+    assertEquals('http://www.example.com/terms/term', profile.resolve('term'));
+    assertEquals('http://www.example.com/prefix#term', profile.resolve('t:term'));
+    
+    // Now we unset the values to be safe in future tests.
+    profile.setTerm('term', null);
+    profile.setPrefix('t', null);
+    assertNull(profile.resolve('term'));
+    assertNull(profile.resolve('t:term'));
+}
+
+//]]>
+</script>
+</head>
+<body>
+</body>
+</html>
