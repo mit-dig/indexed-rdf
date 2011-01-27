@@ -3,8 +3,8 @@
  *
  * Parts Additionally Copyright © 2007 Dominic Mitchell
  *
- * The following code makes use of the URI and URIQuery classes which have the
- * are used and distributed under the following code license:
+ * The following code makes use of the URI and URIQuery classes which
+ * are used and distributed under the New BSD license, which follows:
  *
  * Copyright © 2007 Dominic Mitchell
  * 
@@ -307,6 +307,111 @@ function resolveIRI(base, rel) {
     
     return rel.resolve(base).toString();
 }
+
+/**
+ * @private
+ * @constructor Creates a new IRDFNode.
+ * @param value {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The value of this IRDFNode.
+ */
+var IRDFNode = function(value) { IRDFNode.fn.init.apply(this, [value]); }
+
+/**
+ * @class Implements <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-RDFNode">RDFNode</a>.
+ * @name IRDFNode
+ */
+IRDFNode.fn = IRDFNode.prototype = {
+    init: function(value) {
+	/**
+	 * @private
+	 * The value of the node.
+	 * @type <a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>
+	 */
+	this._value = value;
+	
+	/**
+	 * @private
+	 * The type of node interface that this node exposes.
+	 * @type <a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>
+	 */
+	this._interfaceName = 'RDFNode';
+    },
+    
+    /**
+     * The value of the node.
+     * @field
+     * @name IRDFNode#value
+     * @type <a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>, readonly
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFNode-value">RDFNode#value</a>
+     */
+    get value() {
+	return this._value;
+    },
+    /**
+     * The type of node interface that this node exposes.
+     * @field
+     * @name IRDFNode#interfaceName
+     * @type <a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>, readonly
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFNode-interfaceName">RDFNode#interfaceName</a>
+     */
+    get interfaceName() {
+	return this._interfaceName;
+    },
+    
+    /**
+     * Return the string value of this node.
+     * @return {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The string value of this node.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFNode-toString">RDFNode#toString</a>
+     */
+    toString: function() {
+	return this.value.toString();
+    },
+    
+    /**
+     * Return the N-Triples representation of this node, according to <a href="http://www.w3.org/TR/2004/REC-rdf-testcases-20040210/">RDF Test Cases</a>.
+     * @return {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The N-Triples representation of this node.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFNode-toNT">RDFNode#toNT</a>
+     */
+    toNT: function() {
+	return null;
+    },
+    
+    /**
+     * Return whether or not this RDFNode is equal to another.  This function takes all appropriate attributes into account when performing a comparison.
+     * @param otherNode {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-RDFNode">RDFNode</a>} The node to compare this RDFNode to.
+     * @return {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-boolean">boolean</a>} True, if the two RDFNode objects are equivalent, or, if otherNode is not an instance of RDFNode, if otherNode is equal to this node's value.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFNode-equals">RDFNode#equals</a>
+     */
+    equals: function(otherNode) {
+	return (this.value == otherNode.value) &&
+	       (this.interfaceName == otherNode.interfaceName);
+    }
+};
+
+/**
+ * @private
+ * @constructor Creates a new IRDFBlankNode.
+ */
+var IRDFBlankNode = function(value) { IRDFBlankNode.fn.init.apply(this, [value]); }
+
+/**
+ * @class Implements <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-BlankNode">BlankNode</a>.
+ * @name IRDFBlankNode
+ * @augments IRDFNode
+ */
+IRDFBlankNode.prototype = new IRDFNode();
+
+IRDFBlankNode.prototype.init = function(value) {
+    IRDFNode.fn.init.apply(this, [value]);
+    this._interfaceName = 'BlankNode';
+};
+
+IRDFBlankNode.prototype.toString = function() {
+    return '_:' + value.toString();
+};
+
+IRDFBlankNode.prototype.toNT = function() {
+    return '_:' + value.toString().replace(/[^A-Za-z0-9]/g, '').replace(/^[0-9]+/, '');
+};
 
 /**
  * @private
@@ -781,6 +886,12 @@ IRDFEnvironment.prototype.init = function(db) {
      * @type <a href="http://www.w3.org/TR/IndexedDB/#idl-def-IDBDatabase">IDBDatabase</a>
      */
     this.db = db;
+    /**
+     * @private
+     * An internal counter for generating blank node values.
+     * @type <a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-integer">integer</a>
+     */
+    this.bnodeCounter = 1;
 };
 
 /**
@@ -800,9 +911,9 @@ IRDFEnvironment.prototype.__defineGetter__('name', function() {
  * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createBlankNode">RDFEnvironment#createBlankNode</a>
  */
 IRDFEnvironment.prototype.createBlankNode = function() {
-    return new IRDFBlankNode();
+    return new IRDFBlankNode('bnode' + (this.bnodeCounter++));
 };
-    
+
 /**
  * Create a new named node in the environment.
  * @param iri {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The lexical value of the IRI of the node to create.

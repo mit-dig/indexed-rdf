@@ -1,0 +1,36 @@
+<html>
+<head>
+<title>indexedRDF Test Suite</title>
+<script language="JavaScript" src="jsUnitCore.js"></script>
+<script language="JavaScript">
+//<![CDATA[
+function suite() {
+    var suite = new JsUnitTestSuite();
+    
+    suite.addTestPage('../tests/IRDFFactoryTest.html');
+    suite.addTestPage('../tests/IRDFRequestTest.html');
+    suite.addTestPage('../tests/IRDFEnvironmentTest.html');
+    suite.addTestPage('../tests/IRDFPrefixMapTest.html');
+    suite.addTestPage('../tests/IRDFTermMapTest.html');
+    suite.addTestPage('../tests/IRDFProfileTest.html');
+
+    suite.addTestPage('../tests/IRDFBlankNodeTest.html');
+//    suite.addTestPage('../tests/IRDFNamedNodeTest.html');
+//    suite.addTestPage('../tests/IRDFLiteralTest.html');
+//    suite.addTestPage('../tests/IRDFGraphLiteralTest.html');
+
+//    suite.addTestPage('../tests/IRDFTripleTest.html');
+//    suite.addTestPage('../tests/IRDFGraphTest.html');
+
+//    suite.addTestPage('../tests/IRDFTripleFilterTest.html');
+//    suite.addTestPage('../tests/IRDFTripleCallbackTest.html');
+//    suite.addTestPage('../tests/IRDFTripleActionTest.html');
+    
+    return suite;
+}
+//]]>
+</script>
+</head>
+<body>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<html>
+<head>
+<title>IRDFBlankNode Unit Tests</title>
+<script language="JavaScript" src="jsUnitCore.js"></script>
+<script language="JavaScript" src="../indexedRDF.js"></script>
+<script language="JavaScript">
+//<![CDATA[
+var testCount = 4;
+var env = null;
+
+function setUpPage() {
+    var req = window.indexedRDF.open("IRDFBlankNodeTest");
+    
+    req.onsuccess = function(evt) {
+        env = evt.result;
+        finishSetUp();
+    };
+    req.onerror = function(evt) {
+        finishSetUp();
+    };
+    
+    setUpPageStatus = 'running';
+}
+
+function finishSetUp() {
+    setUpPageStatus = 'complete';
+}
+
+function tearDown() {
+    // Tear down the store only at the end.
+    testCount--;
+    if (testCount == 0) {
+        window.indexedRDF.deleteStore("IRDFBlankNodeTest");
+    }
+}
+
+function testProperties() {
+    var bnode = env.createBlankNode();
+    
+    // How to guarantee randomness of .value?
+    assertNotUndefined(bnode.value);
+    assertEquals('BlankNode', bnode.interfaceName);
+}
+
+function testToString() {
+    var bnode = env.createBlankNode();
+    
+    assertEquals('_:' + bnode.value.toString(), bnode.toString());
+}
+
+function testToNT() {
+    var bnode = env.createBlankNode();
+    
+    assertEquals('_:' + bnode.value.toString(), bnode.toNT());
+}
+
+function testEquals() {
+    var bnode1 = env.createBlankNode();
+    var bnode2 = env.createBlankNode();
+    
+    assert(bnode1.equals(bnode1));
+    assert(bnode2.equals(bnode2));
+    assert(!bnode1.equals(bnode2));
+    assert(!bnode2.equals(bnode1));
+    // What about two different environments?
+}
+//]]>
+</script>
+</head>
+<body>
+</body>
+</html>
