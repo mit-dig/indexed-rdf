@@ -67,7 +67,10 @@ function testEquals() {
     assert(node3.equals(node1));
     assert(!node2.equals(node3));
     assert(!node3.equals(node2));
-    // TODO: Test with strings and other values.
+
+    assert(node1.equals('http://www.example.com/'));
+    assert(node2.equals('http://www.example.net/'));
+    assert(node3.equals('http://www.example.com/'));
 }
 //]]>
 </script>

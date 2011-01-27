@@ -65,6 +65,136 @@ function testProperties() {
     // TODO: PlainLiteral?
 }
 
+function testTypeConversion() {
+    // The following automatic type conversions should hold.
+    
+    // xsd:string -> string
+    var dt = env.createNamedNode('http://www.w3.org/2001/XMLSchema#string');
+    var literal = env.createLiteral('literal', undefined, dt);
+    var date = new Date(0);
+    assertEquals('literal', literal.value);
+    literal = env.createLiteral('1970-01-01T00:00:00Z', undefined, dt);
+    assertEquals('1970-01-01T00:00:00Z', literal.value);
+    assertNotEquals(date, literal.value);
+    literal = env.createLiteral('1', undefined, dt);
+    assertEquals('1', literal.value);
+    assertNotEquals(1, literal.value);
+
+    // xsd:boolean -> boolean
+    dt = env.createNamedNode('http://www.w3.org/2001/XMLSchema#boolean');
+    literal = env.createLiteral('1', undefined, dt);
+    assertEquals(true, literal.value);
+
+    // xsd:dateTime -> Date
+    dt = env.createNamedNode('http://www.w3.org/2001/XMLSchema#dateTime');
+    date = new Date(0);
+    literal = env.createLiteral('1970-01-01T00:00:00Z', undefined, dt);
+    assertEquals(date.getTime(), literal.value.getTime());
+
+    // xsd:date -> Date
+    dt = env.createNamedNode('http://www.w3.org/2001/XMLSchema#date');
+    date = new Date(0);
+    literal = env.createLiteral('1970-01-01', undefined, dt);
+    assertEquals(date.getTime(), literal.value.getTime());
+
+    // xsd:time -> Date
+    // Relative to today?
+    dt = env.createNamedNode('http://www.w3.org/2001/XMLSchema#time');
+    date = new Date();
+    date.setUTCHours(0, 0, 0, 0);
+    literal = env.createLiteral('00:00:00Z', undefined, dt);
+    assertEquals(date.getTime(), literal.value.getTime());
+
+    // xsd:int -> number
+    dt = env.createNamedNode('http://www.w3.org/2001/XMLSchema#int');
+    literal = env.createLiteral('1', undefined, dt);
+    assertEquals(1, literal.value);
+
+    // xsd:double -> number
+    dt = env.createNamedNode('http://www.w3.org/2001/XMLSchema#double');
+    literal = env.createLiteral('3.14', undefined, dt);
+    assertEquals(3.14, literal.value);
+
+    // xsd:float -> number
+    dt = env.createNamedNode('http://www.w3.org/2001/XMLSchema#float');
+    literal = env.createLiteral('3.14', undefined, dt);
+    assertEquals(3.14, literal.value);
+
+    // xsd:decimal -> number
+    dt = env.createNamedNode('http://www.w3.org/2001/XMLSchema#decimal');
+    literal = env.createLiteral('3.14', undefined, dt);
+    assertEquals(3.14, literal.value);
+
+    // xsd:positiveInteger -> number
+    dt = env.createNamedNode('http://www.w3.org/2001/XMLSchema#positiveInteger');
+    literal = env.createLiteral('1', undefined, dt);
+    assertEquals(1, literal.value);
+
+    // xsd:integer -> number
+    dt = env.createNamedNode('http://www.w3.org/2001/XMLSchema#integer');
+    literal = env.createLiteral('1', undefined, dt);
+    assertEquals(1, literal.value);
+
+    // xsd:nonPositiveInteger -> number
+    dt = env.createNamedNode('http://www.w3.org/2001/XMLSchema#nonPositiveInteger');
+    literal = env.createLiteral('0', undefined, dt);
+    assertEquals(0, literal.value);
+
+    // xsd:negativeInteger -> number
+    dt = env.createNamedNode('http://www.w3.org/2001/XMLSchema#negativeInteger');
+    literal = env.createLiteral('-1', undefined, dt);
+    assertEquals(-1, literal.value);
+
+    // xsd:long -> number
+    dt = env.createNamedNode('http://www.w3.org/2001/XMLSchema#long');
+    literal = env.createLiteral('1', undefined, dt);
+    assertEquals(1, literal.value);
+
+    // xsd:short -> number
+    dt = env.createNamedNode('http://www.w3.org/2001/XMLSchema#short');
+    literal = env.createLiteral('1', undefined, dt);
+    assertEquals(1, literal.value);
+
+    // xsd:byte -> number
+    dt = env.createNamedNode('http://www.w3.org/2001/XMLSchema#byte');
+    literal = env.createLiteral('1', undefined, dt);
+    assertEquals(1, literal.value);
+
+    // xsd:nonNegativeInteger -> number
+    dt = env.createNamedNode('http://www.w3.org/2001/XMLSchema#nonNegativeInteger');
+    literal = env.createLiteral('1', undefined, dt);
+    assertEquals(1, literal.value);
+
+    // xsd:unsignedLong -> number
+    dt = env.createNamedNode('http://www.w3.org/2001/XMLSchema#unsignedLong');
+    literal = env.createLiteral('1', undefined, dt);
+    assertEquals(1, literal.value);
+
+    // xsd:unsignedInt -> number
+    dt = env.createNamedNode('http://www.w3.org/2001/XMLSchema#unsignedInt');
+    literal = env.createLiteral('1', undefined, dt);
+    assertEquals(1, literal.value);
+
+    // xsd:unsignedShort -> number
+    dt = env.createNamedNode('http://www.w3.org/2001/XMLSchema#unsignedShort');
+    literal = env.createLiteral('1', undefined, dt);
+    assertEquals(1, literal.value);
+
+    // xsd:unsignedByte -> number
+    dt = env.createNamedNode('http://www.w3.org/2001/XMLSchema#unsignedByte');
+    literal = env.createLiteral('1', undefined, dt);
+    assertEquals(1, literal.value);
+
+    // rdf:PlainLiteral -> string
+    dt = env.createNamedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral');
+    literal = env.createLiteral('1', undefined, dt);
+    assertEquals('1', literal.value);
+    assertEquals('"1@"^^<http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral>', literal.toNT());
+    literal = env.createLiteral('1', 'en', dt);
+    assertEquals('1', literal.value);
+    assertEquals('"1@en"^^<http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral>', literal.toNT());
+}
+
 function testToString() {
     var literal = env.createLiteral('literal');
     var langLiteral = env.createLiteral('literal', 'en');
@@ -131,7 +261,6 @@ function testEquals() {
     assert(dtLiteral2.equals(dtLiteral));
     assert(langDtLiteral.equals(langDtLiteral2));
     assert(langDtLiteral2.equals(langDtLiteral));
-    // TODO: Test with strings and other values.
 }
 //]]>
 </script>

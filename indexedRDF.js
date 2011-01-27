@@ -382,8 +382,12 @@ IRDFNode.fn = IRDFNode.prototype = {
      * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFNode-equals">RDFNode#equals</a>
      */
     equals: function(otherNode) {
-	return (this.value == otherNode.value) &&
-	       (this.interfaceName == otherNode.interfaceName);
+        if (otherNode.value && otherNode.interfaceName) {
+	    return (this.value == otherNode.value) &&
+	           (this.interfaceName == otherNode.interfaceName);
+	} else {
+	    return this.value == otherNode;
+	}
     }
 };
 
@@ -483,6 +487,45 @@ IRDFLiteral.prototype.init = function(value, language, datatype) {
     this._datatype = datatype;
     if (datatype == undefined) {
 	this._datatype = null;
+    } else if (this._datatype.equals) {
+	// Do automatic type conversion.
+	if (this._datatype.equals('http://www.w3.org/2001/XMLSchema#string')) {
+	    this._value = this._value.toString();
+	} else if (this._datatype.equals('http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral')) {
+	    this._value = this._value.toString();
+	    if (this._language == null) {
+		this._language = '';
+	    }
+	} else if (this._datatype.equals('http://www.w3.org/2001/XMLSchema#boolean')) {
+	    this._value = (this._value.toLowerCase() == 'true' ||
+			   this._value == '1');
+	} else if (this._datatype.equals('http://www.w3.org/2001/XMLSchema#dateTime') ||
+		   this._datatype.equals('http://www.w3.org/2001/XMLSchema#date')) {
+	    this._value = new Date(this._value);
+	} else if (this._datatype.equals('http://www.w3.org/2001/XMLSchema#time')) {
+	    var date = new Date();
+	    date.setUTCHours(0, 0, 0, 0);
+	    this._value = new Date('1970-01-01T' + this._value);
+	    this._value.setTime(date.getTime() + this._value.getTime());
+	} else if (this._datatype.equals('http://www.w3.org/2001/XMLSchema#int') ||
+		   this._datatype.equals('http://www.w3.org/2001/XMLSchema#positiveInteger') ||
+		   this._datatype.equals('http://www.w3.org/2001/XMLSchema#negativeInteger') ||
+		   this._datatype.equals('http://www.w3.org/2001/XMLSchema#nonPositiveInteger') ||
+		   this._datatype.equals('http://www.w3.org/2001/XMLSchema#nonNegativeInteger') ||
+		   this._datatype.equals('http://www.w3.org/2001/XMLSchema#integer') ||
+		   this._datatype.equals('http://www.w3.org/2001/XMLSchema#long') ||
+		   this._datatype.equals('http://www.w3.org/2001/XMLSchema#short') ||
+		   this._datatype.equals('http://www.w3.org/2001/XMLSchema#byte') ||
+		   this._datatype.equals('http://www.w3.org/2001/XMLSchema#unsignedLong') ||
+		   this._datatype.equals('http://www.w3.org/2001/XMLSchema#unsignedInt') ||
+		   this._datatype.equals('http://www.w3.org/2001/XMLSchema#unsignedShort') ||
+		   this._datatype.equals('http://www.w3.org/2001/XMLSchema#unsignedByte')) {
+	    this._value = parseInt(this._value);
+	} else if (this._datatype.equals('http://www.w3.org/2001/XMLSchema#double') ||
+		   this._datatype.equals('http://www.w3.org/2001/XMLSchema#float') ||
+		   this._datatype.equals('http://www.w3.org/2001/XMLSchema#decimal')) {
+	    this._value = parseFloat(this._value);
+	}
     }
 };
 
@@ -513,25 +556,35 @@ IRDFLiteral.prototype.toString = function() {
 };
 
 IRDFLiteral.prototype.toNT = function() {
-    var nt = '"' + this.value.toString().replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"'; // FIX EMACS HIGHLIGHTING: "'"');
+    var nt;
     
-    // What about if both are set?
-    if (this.language) {
-	nt += '@' + this.language.toString();
-    } else if (this.datatype) {
-	nt += '^^' + this.datatype.toNT();
+    if (this.datatype && this.datatype.equals('http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral')) {
+	nt = '"' + this.value.toString().replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '@' + this.language + '"^^' + this.datatype.toNT(); // FIX EMACS HIGHLIGHTING: "'"');
+    } else {
+	nt = '"' + this.value.toString().replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"'; // FIX EMACS HIGHLIGHTING: "'"');
+	if (this.language) {
+	    nt += '@' + this.language.toString();
+	} else if (this.datatype) {
+	    nt += '^^' + this.datatype.toNT();
+	}
     }
+
+    // What about if both are set?
     
     return nt;
 };
 
 IRDFLiteral.prototype.equals = function(otherNode) {
-    return (this.value == otherNode.value) &&
-           (this.interfaceName == otherNode.interfaceName) &&
-           (this.language == otherNode.language) &&
-           (this.datatype == otherNode.datatype ||
-	    (this.datatype && otherNode.datatype &&
-	     this.datatype.equals(otherNode.datatype)));
+    if (otherNode.value && otherNode.interfaceName) {
+	return (this.value == otherNode.value) &&
+	       (this.interfaceName == otherNode.interfaceName) &&
+	       (this.language == otherNode.language) &&
+	       (this.datatype == otherNode.datatype ||
+		(this.datatype && otherNode.datatype &&
+		 this.datatype.equals(otherNode.datatype)));
+    } else {
+	return this.value == otherNode;
+    }
 };
 
 IRDFLiteral.fn = IRDFLiteral.prototype;
