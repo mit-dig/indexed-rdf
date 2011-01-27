@@ -414,6 +414,8 @@ IRDFBlankNode.prototype.toNT = function() {
     return '_:' + this.value.toString().replace(/[^A-Za-z0-9]/g, '').replace(/^[0-9]+/, '');
 };
 
+IRDFBlankNode.fn = IRDFBlankNode.prototype;
+
 /**
  * @private
  * @constructor Creates a new IRDFNamedNode.
@@ -441,6 +443,8 @@ IRDFNamedNode.prototype.toNT = function() {
     return '<' + this.value.toString() + '>';
 };
 
+IRDFNamedNode.fn = IRDFNamedNode.prototype;
+
 /**
  * @private
  * @constructor Creates a new IRDFLiteral.
@@ -460,8 +464,26 @@ IRDFLiteral.prototype = new IRDFNode();
 IRDFLiteral.prototype.init = function(value, language, datatype) {
     IRDFNode.fn.init.apply(this, [value]);
     this._interfaceName = 'Literal';
+    
+    /**
+     * @private
+     * The language code associated with this literal.
+     * @type <a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>
+     */
     this._language = language;
+    if (language == undefined) {
+	this._language = null;
+    }
+    
+    /**
+     * @private
+     * The datatype associated with this literal.
+     * @type <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-NamedNode">NamedNode</a>
+     */
     this._datatype = datatype;
+    if (datatype == undefined) {
+	this._datatype = null;
+    }
 };
 
 /**
@@ -479,7 +501,7 @@ IRDFLiteral.prototype.__defineGetter__('language', function() {
  * The datatype associated with the literal.
  * @field
  * @name IRDFLiteral#datatype
- * @type <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-NamedNode">NamedNode</a>, optional
+ * @type <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-NamedNode">NamedNode</a>
  * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Literal-datatype">Literal#datatype</a>
  */
 IRDFLiteral.prototype.__defineGetter__('datatype', function() {
@@ -507,8 +529,12 @@ IRDFLiteral.prototype.equals = function(otherNode) {
     return (this.value == otherNode.value) &&
            (this.interfaceName == otherNode.interfaceName) &&
            (this.language == otherNode.language) &&
-           (this.datatype.equals(otherNode.datatype));
+           (this.datatype == otherNode.datatype ||
+	    (this.datatype && otherNode.datatype &&
+	     this.datatype.equals(otherNode.datatype)));
 };
+
+IRDFLiteral.fn = IRDFLiteral.prototype;
 
 /**
  * @private
@@ -964,9 +990,7 @@ IRDFProfile.fn = IRDFProfile.prototype = {
  * @constructor Creates a new IRDFEnvironment with the specified indexedDB backing store.
  * @param db {<a href="http://www.w3.org/TR/IndexedDB/#idl-def-IDBDatabase">IDBDatabase</a>} The indexedDB database to use as a backing store for the IRDFEnvironment.
  */
-var IRDFEnvironment = function(db) {
-    IRDFEnvironment.fn.init.apply(this, [db]);
-};
+var IRDFEnvironment = function(db) { IRDFEnvironment.fn.init.apply(this, [db]); };
 
 /**
  * @class Implements <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-RDFEnvironment">RDFEnvironment</a>.
@@ -1469,6 +1493,30 @@ IRDFFactory.prototype = {
  * The global window object.
  * @name window
  */
+
+/**
+ * The IRDFNode class (for reference to IRDFNode constants).
+ * @name window#IRDFNode
+ */
+window.IRDFNode = IRDFNode;
+
+/**
+ * The IRDFBlankNode class (for reference to IRDFBlankNode constants).
+ * @name window#IRDFBlankNode
+ */
+window.IRDFBlankNode = IRDFBlankNode;
+
+/**
+ * The IRDFNamedNode class (for reference to IRDFNamedNode constants).
+ * @name window#IRDFNamedNode
+ */
+window.IRDFNamedNode = IRDFNamedNode;
+
+/**
+ * The IRDFLiteral class (for reference to IRDFLiteral constants).
+ * @name window#IRDFLiteral
+ */
+window.IRDFLiteral = IRDFLiteral;
 
 /**
  * The IRDFPrefixMap class (for reference to IRDFPrefixMap constants).
