@@ -1,0 +1,77 @@
+<html>
+<head>
+<title>IRDFNamedNode Unit Tests</title>
+<script language="JavaScript" src="jsUnitCore.js"></script>
+<script language="JavaScript" src="../indexedRDF.js"></script>
+<script language="JavaScript">
+//<![CDATA[
+var testCount = 4;
+var env = null;
+
+function setUpPage() {
+    var req = window.indexedRDF.open("IRDFNamedNodeTest");
+    
+    req.onsuccess = function(evt) {
+        env = evt.result;
+        finishSetUp();
+    };
+    req.onerror = function(evt) {
+        finishSetUp();
+    };
+    
+    setUpPageStatus = 'running';
+}
+
+function finishSetUp() {
+    setUpPageStatus = 'complete';
+}
+
+function tearDown() {
+    // Tear down the store only at the end.
+    testCount--;
+    if (testCount == 0) {
+        window.indexedRDF.deleteStore("IRDFNamedNodeTest");
+    }
+}
+
+function testProperties() {
+    var node = env.createNamedNode('http://www.example.com/');
+    
+    // How to guarantee randomness of .value?
+    assertEquals('http://www.example.com/', node.value);
+    assertEquals('NamedNode', node.interfaceName);
+}
+
+function testToString() {
+    var node = env.createNamedNode('http://www.example.com/');
+    
+    assertEquals('http://www.example.com/', node.toString());
+}
+
+function testToNT() {
+    var node = env.createNamedNode('http://www.example.com/');
+    
+    assertEquals('<http://www.example.com/>', node.toNT());
+}
+
+function testEquals() {
+    var node1 = env.createNamedNode('http://www.example.com/');
+    var node2 = env.createNamedNode('http://www.example.net/');
+    var node3 = env.createNamedNode('http://www.example.com/');
+    
+    assert(node1.equals(node1));
+    assert(node2.equals(node2));
+    assert(node3.equals(node3));
+    assert(!node1.equals(node2));
+    assert(!node2.equals(node1));
+    assert(node1.equals(node3));
+    assert(node3.equals(node1));
+    assert(!node2.equals(node3));
+    assert(!node3.equals(node2));
+}
+//]]>
+</script>
+</head>
+<body>
+</body>
+</html>

@@ -415,6 +415,32 @@ IRDFBlankNode.prototype.toNT = function() {
 
 /**
  * @private
+ * @constructor Creates a new IRDFNamedNode.
+ */
+var IRDFNamedNode = function(value) { IRDFNamedNode.fn.init.apply(this, [value]); }
+
+/**
+ * @class Implements <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-NamedNode">NamedNode</a>.
+ * @name IRDFNamedNode
+ * @augments IRDFNode
+ */
+IRDFNamedNode.prototype = new IRDFNode();
+
+IRDFNamedNode.prototype.init = function(value) {
+    IRDFNode.fn.init.apply(this, [value]);
+    this._interfaceName = 'NamedNode';
+};
+
+IRDFNamedNode.prototype.toString = function() {
+    return value.toString();
+};
+
+IRDFNamedNode.prototype.toNT = function() {
+    return '<' + value.toString() + '>';
+};
+
+/**
+ * @private
  * @constructor Creates a new IRDFPrefixMap.
  */
 var IRDFPrefixMap = function() { IRDFPrefixMap.fn.init.apply(this); };
