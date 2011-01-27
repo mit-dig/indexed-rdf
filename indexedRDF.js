@@ -311,7 +311,7 @@ function resolveIRI(base, rel) {
 /**
  * @private
  * @constructor Creates a new IRDFNode.
- * @param value {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The value of this IRDFNode.
+ * @param value {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-any">any</a>} The value of this IRDFNode.
  */
 var IRDFNode = function(value) { IRDFNode.fn.init.apply(this, [value]); }
 
@@ -324,7 +324,7 @@ IRDFNode.fn = IRDFNode.prototype = {
 	/**
 	 * @private
 	 * The value of the node.
-	 * @type <a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>
+	 * @type <a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-any">any</a>
 	 */
 	this._value = value;
 	
@@ -340,7 +340,7 @@ IRDFNode.fn = IRDFNode.prototype = {
      * The value of the node.
      * @field
      * @name IRDFNode#value
-     * @type <a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>, readonly
+     * @type <a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-any">any</a>, readonly
      * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFNode-value">RDFNode#value</a>
      */
     get value() {
@@ -390,6 +390,7 @@ IRDFNode.fn = IRDFNode.prototype = {
 /**
  * @private
  * @constructor Creates a new IRDFBlankNode.
+ * @param value {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-any">any</a>} The internal value of the IRDFBlankNode used to stringify it.  The value must respond to toString().
  */
 var IRDFBlankNode = function(value) { IRDFBlankNode.fn.init.apply(this, [value]); }
 
@@ -406,16 +407,17 @@ IRDFBlankNode.prototype.init = function(value) {
 };
 
 IRDFBlankNode.prototype.toString = function() {
-    return '_:' + value.toString();
+    return '_:' + this.value.toString();
 };
 
 IRDFBlankNode.prototype.toNT = function() {
-    return '_:' + value.toString().replace(/[^A-Za-z0-9]/g, '').replace(/^[0-9]+/, '');
+    return '_:' + this.value.toString().replace(/[^A-Za-z0-9]/g, '').replace(/^[0-9]+/, '');
 };
 
 /**
  * @private
  * @constructor Creates a new IRDFNamedNode.
+ * @param value {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-any">any</a>} The IRI value of the IRDFNamedNode.
  */
 var IRDFNamedNode = function(value) { IRDFNamedNode.fn.init.apply(this, [value]); }
 
@@ -432,11 +434,80 @@ IRDFNamedNode.prototype.init = function(value) {
 };
 
 IRDFNamedNode.prototype.toString = function() {
-    return value.toString();
+    return this.value.toString();
 };
 
 IRDFNamedNode.prototype.toNT = function() {
-    return '<' + value.toString() + '>';
+    return '<' + this.value.toString() + '>';
+};
+
+/**
+ * @private
+ * @constructor Creates a new IRDFLiteral.
+ * @param value {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-any">any</a>} The value of the IRDFLiteral.  The value must respond to toString().
+ * @param language {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>, optional} The language code associated with the literal, specified according to <a href="http://tools.ietf.org/rfc/bcp/bcp47.txt">BCP47</a>.
+ * @param datatype {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-NamedNode">NamedNode</a>, optional} The datatype associated with the literal.  This value may be specified as a full IRI or CURIE.
+ */
+var IRDFLiteral = function(value, language, datatype) { IRDFLiteral.fn.init.apply(this, [value, language, datatype]); }
+
+/**
+ * @class Implements <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-Literal">Literal</a>.
+ * @name IRDFLiteral
+ * @augments IRDFNode
+ */
+IRDFLiteral.prototype = new IRDFNode();
+
+IRDFLiteral.prototype.init = function(value, language, datatype) {
+    IRDFNode.fn.init.apply(this, [value]);
+    this._interfaceName = 'Literal';
+    this._language = language;
+    this._datatype = datatype;
+};
+
+/**
+ * The language code associated with the literal.
+ * @field
+ * @name IRDFLiteral#language
+ * @type <a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>, readonly
+ * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Literal-language">Literal#language</a>
+ */
+IRDFLiteral.prototype.__defineGetter__('language', function() {
+    return this._language;
+});
+
+/**
+ * The datatype associated with the literal.
+ * @field
+ * @name IRDFLiteral#datatype
+ * @type <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-NamedNode">NamedNode</a>, optional
+ * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Literal-datatype">Literal#datatype</a>
+ */
+IRDFLiteral.prototype.__defineGetter__('datatype', function() {
+    return this._datatype;
+});
+
+IRDFLiteral.prototype.toString = function() {
+    return this.value.toString();
+};
+
+IRDFLiteral.prototype.toNT = function() {
+    var nt = '"' + this.value.toString().replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"'; // FIX EMACS HIGHLIGHTING: "'"');
+    
+    // What about if both are set?
+    if (this.language) {
+	nt += '@' + this.language.toString();
+    } else if (this.datatype) {
+	nt += '^^' + this.datatype.toNT();
+    }
+    
+    return nt;
+};
+
+IRDFLiteral.prototype.equals = function(otherNode) {
+    return (this.value == otherNode.value) &&
+           (this.interfaceName == otherNode.interfaceName) &&
+           (this.language == otherNode.language) &&
+           (this.datatype.equals(otherNode.datatype));
 };
 
 /**

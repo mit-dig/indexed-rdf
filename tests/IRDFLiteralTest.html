@@ -1,0 +1,140 @@
+<html>
+<head>
+<title>IRDFLiteral Unit Tests</title>
+<script language="JavaScript" src="jsUnitCore.js"></script>
+<script language="JavaScript" src="../indexedRDF.js"></script>
+<script language="JavaScript">
+//<![CDATA[
+var testCount = 4;
+var env = null;
+
+function setUpPage() {
+    var req = window.indexedRDF.open("IRDFLiteralTest");
+    
+    req.onsuccess = function(evt) {
+        env = evt.result;
+        finishSetUp();
+    };
+    req.onerror = function(evt) {
+        finishSetUp();
+    };
+    
+    setUpPageStatus = 'running';
+}
+
+function finishSetUp() {
+    setUpPageStatus = 'complete';
+}
+
+function tearDown() {
+    // Tear down the store only at the end.
+    testCount--;
+    if (testCount == 0) {
+        window.indexedRDF.deleteStore("IRDFLiteralTest");
+    }
+}
+
+function testProperties() {
+    var literal = env.createLiteral('literal');
+    var langLiteral = env.createLiteral('literal', 'en');
+    var dt = env.createNamedNode('http://www.example.com/');
+    var dtLiteral = env.createLiteral('literal', undefined, dt);
+    var langDtLiteral = env.createLiteral('literal', 'en', dt);
+    
+    assertEquals('literal', literal.value);
+    assertEquals('Literal', literal.interfaceName);
+    assertNull(literal.language);
+    assertNull(literal.datatype);
+
+    assertEquals('literal', langLiteral.value);
+    assertEquals('Literal', langLiteral.interfaceName);
+    assertEquals('en', langLiteral.language);
+    assertNull(langLiteral.datatype);
+
+    assertEquals('literal', dtLiteral.value);
+    assertEquals('Literal', dtLiteral.interfaceName);
+    assertNull(dtLiteral.language);
+    assert(dt.equals(dtLiteral.datatype));
+
+    assertEquals('literal', langDtLiteral.value);
+    assertEquals('Literal', langDtLiteral.interfaceName);
+    assertEquals('en', langDtLiteral.language);
+    assert(dt.equals(langDtLiteral.datatype));
+
+    // TODO: Automatic type conversion?
+    // TODO: PlainLiteral?
+}
+
+function testToString() {
+    var literal = env.createLiteral('literal');
+    var langLiteral = env.createLiteral('literal', 'en');
+    var dt = env.createNamedNode('http://www.example.com/');
+    var dtLiteral = env.createLiteral('literal', undefined, dt);
+    var langDtLiteral = env.createLiteral('literal', 'en', dt);
+    
+    assertEquals('literal', literal.toString());
+    assertEquals('literal', langLiteral.toString());
+    assertEquals('literal', dtLiteral.toString());
+    assertEquals('literal', langDtLiteral.toString());
+}
+
+function testToNT() {
+    var literal = env.createLiteral('literal');
+    var langLiteral = env.createLiteral('literal', 'en');
+    var dt = env.createNamedNode('http://www.example.com/');
+    var dtLiteral = env.createLiteral('literal', undefined, dt);
+    var langDtLiteral = env.createLiteral('literal', 'en', dt);
+    
+    assertEquals('"literal"', literal.toNT());
+    assertEquals('"literal"@en', langLiteral.toNT());
+    assertEquals('"literal"^^<http://www.example.com/>', dtLiteral.toNT());
+    assertEquals('"literal"@en', langDtLiteral.toNT());
+}
+
+function testEquals() {
+    var literal = env.createLiteral('literal');
+    var literal2 = env.createLiteral('literal');
+    var langLiteral = env.createLiteral('literal', 'en');
+    var langLiteral2 = env.createLiteral('literal', 'en');
+    var dt = env.createNamedNode('http://www.example.com/');
+    var dt2 = env.createNamedNode('http://www.example.com/');
+    var dtLiteral = env.createLiteral('literal', undefined, dt);
+    var dtLiteral2 = env.createLiteral('literal', undefined, dt2);
+    var langDtLiteral = env.createLiteral('literal', 'en', dt);
+    var langDtLiteral2 = env.createLiteral('literal', 'en', dt2);
+    
+    assert(literal.equals(literal));
+    assert(langLiteral.equals(langLiteral));
+    assert(dtLiteral.equals(dtLiteral));
+    assert(langDtLiteral.equals(langDtLiteral));
+
+    assert(!literal.equals(langLiteral));
+    assert(!langLiteral.equals(literal));
+    assert(!literal.equals(dtLiteral));
+    assert(!dtLiteral.equals(literal));
+    assert(!literal.equals(langDtLiteral));
+    assert(!langDtLiteral.equals(literal));
+
+    assert(!langLiteral.equals(dtLiteral));
+    assert(!dtLiteral.equals(langLiteral));
+    assert(!langLiteral.equals(langDtLiteral));
+    assert(!langDtLiteral.equals(langLiteral));
+    
+    assert(!dtLiteral.equals(langDtLiteral));
+    assert(!langDtLiteral.equals(dtLiteral));
+
+    assert(literal.equals(literal2));
+    assert(literal2.equals(literal));
+    assert(langLiteral.equals(langLiteral2));
+    assert(langLiteral2.equals(langLiteral));
+    assert(dtLiteral.equals(dtLiteral2));
+    assert(dtLiteral2.equals(dtLiteral));
+    assert(langDtLiteral.equals(langDtLiteral2));
+    assert(langDtLiteral2.equals(langDtLiteral));
+}
+//]]>
+</script>
+</head>
+<body>
+</body>
+</html>

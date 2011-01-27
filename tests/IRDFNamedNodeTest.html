@@ -37,7 +37,6 @@ function tearDown() {
 function testProperties() {
     var node = env.createNamedNode('http://www.example.com/');
     
-    // How to guarantee randomness of .value?
     assertEquals('http://www.example.com/', node.value);
     assertEquals('NamedNode', node.interfaceName);
 }
