@@ -544,7 +544,7 @@ IRDFLiteral.prototype.__defineGetter__('language', function() {
  * The datatype associated with the literal.
  * @field
  * @name IRDFLiteral#datatype
- * @type <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-NamedNode">NamedNode</a>
+ * @type <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-NamedNode">NamedNode</a>, readonly
  * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Literal-datatype">Literal#datatype</a>
  */
 IRDFLiteral.prototype.__defineGetter__('datatype', function() {
@@ -626,31 +626,31 @@ IRDFTriple.fn = IRDFTriple.prototype = {
 	this._object = object;
     },
     
-    /*
+    /**
      * The subject of this triple.
      * @field
      * @name IRDFTriple#subject
-     * @type RDFNode, readonly
+     * @type <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-RDFNode">RDFNode</a>, readonly
      * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Triple-subject">Triple#subject</a>
      */
     get subject() {
 	return this._subject;
     },
-    /*
+    /**
      * The property of this triple.
      * @field
      * @name IRDFTriple#property
-     * @type RDFNode, readonly
+     * @type <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-RDFNode">RDFNode</a>, readonly
      * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Triple-property">Triple#property</a>
      */
     get property() {
 	return this._property;
     },
-    /*
+    /**
      * The object of this triple.
      * @field
      * @name IRDFTriple#object
-     * @type RDFNode, readonly
+     * @type <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-RDFNode">RDFNode</a>, readonly
      * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Triple-object">Triple#object</a>
      */
     get object() {
