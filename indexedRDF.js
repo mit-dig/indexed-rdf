@@ -669,6 +669,58 @@ IRDFTriple.fn = IRDFTriple.prototype = {
 
 /**
  * @private
+ * @constructor Creates a new IRDFTripleAction.
+ * @param test {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-TripleFilter">TripleFilter</a>} The test to run against a triple.
+ * @param action {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-TripleCallback">TripleCallback</a>} The action to run should a triple pass the test.
+ */
+var IRDFTripleAction = function(test, action) { IRDFTripleAction.fn.init.apply(this, [test, action]); };
+
+/**
+ * @class Implements <a href="">TripleAction</a>.
+ * @name IRDFTripleAction
+ */
+IRDFTripleAction.fn = IRDFTripleAction.prototype = {
+    init: function(test, action) {
+	/**
+	 * The test to run against a triple.
+	 * @type <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-TripleFilter">TripleFilter</a>
+	 * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-TripleAction-test">TripleAction#test</a>
+	 */
+	this.test = test;
+	/**
+	 * The action to run should a triple pass the test.
+	 * @type <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-TripleCallback">TripleCallback</a>
+	 * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-TripleAction-action">TripleAction#action</a>
+	 */
+	this.action = action;
+    },
+    
+    /**
+     * Run this action against a triple if it passes this action's test.
+     * @param triple {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-Triple">Triple</a>} The triple to run against this action.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-TripleAction-try">TripleAction#try</a>
+     */
+    try: function(triple) {
+	if (this.test &&
+	    ((typeof this.test === 'function' &&
+	      this.test(triple)) ||
+	     (this.test.test &&
+	      typeof this.test.test === 'function' &&
+	      this.test.test(triple)))) {
+	    if (this.action) {
+		if (typeof this.action === 'function') {
+		    this.action(triple);
+		} else if (this.action.run &&
+			   typeof this.action.run === 'function') {
+		    this.action.run(triple);
+		}
+	    }
+	}
+    }
+};
+
+/**
+ * @private
  * @constructor Creates a new IRDFPrefixMap.
  */
 var IRDFPrefixMap = function() { IRDFPrefixMap.fn.init.apply(this); };
@@ -1475,10 +1527,11 @@ IRDFRequest.fn = IRDFRequest.prototype = {
 		    for (var i = 0; i < this.eventListeners[evt.type][true].length; i++) {
                         var listener = this.eventListeners[evt.type][true][i];
 			try {
-			    if (listener.handleEvent != undefined) {
-				listener.handleEvent(evt);
-			    } else {
+			    if (typeof listener === 'function') {
 				listener(evt);
+			    } else if (listener.handleEvent != undefined &&
+				       typeof listener.handleEvent === 'function') {
+				listener.handleEvent(evt);
 			    }
 			} catch (exc) {
 			}
@@ -1488,10 +1541,11 @@ IRDFRequest.fn = IRDFRequest.prototype = {
 		    for (var i = 0; i < this.eventListeners[evt.type][false].length; i++) {
                         var listener = this.eventListeners[evt.type][false][i];
 			try {
-			    if (listener.handleEvent != undefined) {
-				listener.handleEvent(evt);
-			    } else {
+			    if (typeof listener === 'function') {
 				listener(evt);
+			    } else if (listener.handleEvent != undefined &&
+				       typeof listener.handleEvent === 'function') {
+				listener.handleEvent(evt);
 			    }
 			} catch (exc) {
 			}
@@ -1624,54 +1678,6 @@ IRDFFactory.prototype = {
  * The global window object.
  * @name window
  */
-
-/**
- * The IRDFNode class (for reference to IRDFNode constants).
- * @name window#IRDFNode
- */
-window.IRDFNode = IRDFNode;
-
-/**
- * The IRDFBlankNode class (for reference to IRDFBlankNode constants).
- * @name window#IRDFBlankNode
- */
-window.IRDFBlankNode = IRDFBlankNode;
-
-/**
- * The IRDFNamedNode class (for reference to IRDFNamedNode constants).
- * @name window#IRDFNamedNode
- */
-window.IRDFNamedNode = IRDFNamedNode;
-
-/**
- * The IRDFLiteral class (for reference to IRDFLiteral constants).
- * @name window#IRDFLiteral
- */
-window.IRDFLiteral = IRDFLiteral;
-
-/**
- * The IRDFTriple class (for reference to IRDFTriple constants).
- * @name window#IRDFTriple
- */
-window.IRDFTriple = IRDFTriple;
-
-/**
- * The IRDFPrefixMap class (for reference to IRDFPrefixMap constants).
- * @name window#IRDFPrefixMap
- */
-window.IRDFPrefixMap = IRDFPrefixMap;
-
-/**
- * The IRDFTermMap class (for reference to IRDFTermMap constants).
- * @name window#IRDFTermMap
- */
-window.IRDFTermMap = IRDFTermMap;
-
-/**
- * The IRDFProfile class (for reference to IRDFProfile constants).
- * @name window#IRDFProfile
- */
-window.IRDFProfile = IRDFProfile;
 
 /**
  * The IRDFEnvironment class (for reference to IRDFEnvironment constants).

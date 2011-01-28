@@ -235,33 +235,33 @@ function testImportProfileFromGraph() {
 
 function testNodeConstructors() {
     var o = env.createBlankNode();
-    assert(o instanceof IRDFBlankNode);
+    assertEquals('BlankNode', o.interfaceName);
 
     o = env.createNamedNode('http://www.example.com/');
-    assert(o instanceof IRDFNamedNode);
+    assertEquals('NamedNode', o.interfaceName);
     assertEquals('http://www.example.com/', o.value);
 
     // Literal with no datatype or language
     o = env.createLiteral('literal');
-    assert(o instanceof IRDFLiteral);
+    assertEquals('Literal', o.interfaceName);
     assertEquals('literal', o.value);
     assertNull(o.language);
     assertNull(o.datatype);
     
     o = env.createLiteral('literal', 'en');
-    assert(o instanceof IRDFLiteral);
+    assertEquals('Literal', o.interfaceName);
     assertEquals('literal', o.value);
     assertEquals('en', o.language);
     assertNull(o.datatype);
 
     o = env.createLiteral('literal', null, 'http://www.example.com/');
-    assert(o instanceof IRDFLiteral);
+    assertEquals('Literal', o.interfaceName);
     assertEquals('literal', o.value);
     assertNull(o.language);
     assertEquals('http://www.example.com/', o.datatype);
 
     o = env.createGraphLiteral();
-    assert(o instanceof IRDFGraphLiteral);
+    assertEquals('GraphLiteral', o.interfaceName);
     assertEquals(0, o.value.length);
 
     // We'll test passing an argument later.
@@ -270,23 +270,20 @@ function testNodeConstructors() {
     var p = env.createNamedNode('http://www.example.com/p');
     var o = env.createNamedNode('http://www.example.com/o');
     var triple = env.createTriple(s, p, o);
-    assert(triple instanceof IRDFTriple);
     assertEquals(s, triple.subject);
     assertEquals(p, triple.property);
     assertEquals(o, triple.object);
 
     var graph = env.createGraph();
-    assert(graph instanceof IRDFGraph);
     assertEquals(0, graph.length);
 
     graph = env.createGraph([triple]);
-    assert(graph instanceof IRDFGraph);
     assertEquals(1, graph.length);
     assertEquals(triple, graph.toArray()[0]);
 
     // And now back to graph literals.
     o = env.createGraphLiteral(graph);
-    assert(o instanceof IRDFGraphLiteral);
+    assertEquals('GraphLiteral', o.interfaceName);
     assertNotEquals(graph, o.value);
     assertEquals(1, o.value.length);
     assertEquals(triple, o.value.toArray()[0]);
@@ -296,7 +293,6 @@ function testActionConstructor() {
     var test = function(triple) {};
     var action = function(triple) {};
     o = env.createAction(test, action);
-    assert(o instanceof IRDFAction);
     assertEquals(test, o.test);
     assertEquals(action, o.action);
 }
@@ -309,7 +305,6 @@ function testMapConstructors() {
 
     // Profile should do a copy by default except of the base.
     o = env.createProfile();
-    assert(o instanceof IRDFProfile);
     assertNull(o.base);
     assertEquals('http://www.example.com/#term', o.resolve('term'));
     assertEquals('http://www.example.com/terms#term', o.resolve('t:term'));
@@ -326,7 +321,6 @@ function testMapConstructors() {
 
     // We can set the base...
     o = env.createProfile('http://www.example.com/#');
-    assert(o instanceof IRDFProfile);
     assertEquals('http://www.example.com/#', o.base);
     assertEquals('http://www.example.com/#term', o.resolve('term'));
     assertEquals('http://www.example.com/terms#term', o.resolve('t:term'));
@@ -343,7 +337,6 @@ function testMapConstructors() {
 
     // Set empty to false...
     o = env.createProfile('http://www.example.com/#', false);
-    assert(o instanceof IRDFProfile);
     assertEquals('http://www.example.com/#', o.base);
     assertEquals('http://www.example.com/#term', o.resolve('term'));
     assertEquals('http://www.example.com/terms#term', o.resolve('t:term'));
@@ -360,7 +353,6 @@ function testMapConstructors() {
 
     // Set empty to true too...
     o = env.createProfile(null, true);
-    assert(o instanceof IRDFProfile);
     assertNull(o.base);
     assertNull(o.resolve('term'));
     assertNull(o.resolve('t:term'));
@@ -377,7 +369,6 @@ function testMapConstructors() {
 
     // And the same applies to TermMap
     o = env.createTermMap();
-    assert(o instanceof IRDFTermMap);
     assertEquals('http://www.example.com/#term', o.resolve('term'));
 
     assertEquals('http://www.example.com/#term', env.resolve('term'));
@@ -386,7 +377,6 @@ function testMapConstructors() {
     assertEquals('http://www.example.com/#term', env.resolve('term'));
 
     o = env.createTermMap(false);
-    assert(o instanceof IRDFTermMap);
     assertEquals('http://www.example.com/#term', o.resolve('term'));
 
     assertEquals('http://www.example.com/#term', env.resolve('term'));
@@ -395,7 +385,6 @@ function testMapConstructors() {
     assertEquals('http://www.example.com/#term', env.resolve('term'));
 
     o = env.createTermMap(true);
-    assert(o instanceof IRDFTermMap);
     assertNull(o.resolve('term'));
 
     assertEquals('http://www.example.com/#term', env.resolve('term'));
@@ -405,7 +394,6 @@ function testMapConstructors() {
 
     // And also PrefixMap
     o = env.createPrefixMap();
-    assert(o instanceof IRDFPrefixMap);
     assertEquals('http://www.example.com/terms#term', o.resolve('t:term'));
 
     assertEquals('http://www.example.com/terms#term', env.resolve('t:term'));
@@ -414,7 +402,6 @@ function testMapConstructors() {
     assertEquals('http://www.example.com/terms#term', env.resolve('t:term'));
 
     o = env.createPrefixMap(false);
-    assert(o instanceof IRDFPrefixMap);
     assertEquals('http://www.example.com/terms#term', o.resolve('t:term'));
 
     assertEquals('http://www.example.com/terms#term', env.resolve('t:term'));
@@ -423,7 +410,6 @@ function testMapConstructors() {
     assertEquals('http://www.example.com/terms#term', env.resolve('t:term'));
 
     o = env.createPrefixMap(true);
-    assert(o instanceof IRDFPrefixMap);
     assertNull(o.resolve('t:term'));
 
     assertEquals('http://www.example.com/terms#term', env.resolve('t:term'));
