@@ -1,0 +1,61 @@
+<html>
+<head>
+<title>IRDFTriple Unit Tests</title>
+<script language="JavaScript" src="jsUnitCore.js"></script>
+<script language="JavaScript" src="../indexedRDF.js"></script>
+<script language="JavaScript">
+//<![CDATA[
+var testCount = 2;
+var env = null;
+
+function setUpPage() {
+    var req = window.indexedRDF.open("IRDFTripleTest");
+    
+    req.onsuccess = function(evt) {
+        env = evt.result;
+        finishSetUp();
+    };
+    req.onerror = function(evt) {
+        finishSetUp();
+    };
+    
+    setUpPageStatus = 'running';
+}
+
+function finishSetUp() {
+    setUpPageStatus = 'complete';
+}
+
+function tearDown() {
+    // Tear down the store only at the end.
+    testCount--;
+    if (testCount == 0) {
+        window.indexedRDF.deleteStore("IRDFTripleTest");
+    }
+}
+
+function testProperties() {
+    var subject = env.createNamedNode('http://www.example.com/subject');
+    var property = env.createNamedNode('http://www.example.com/property');
+    var object = env.createNamedNode('http://www.example.com/object');
+    var triple = env.createTriple(subject, property, object);
+    
+    assertEquals(subject, triple.subject);
+    assertEquals(property, triple.property);
+    assertEquals(object, triple.object);
+}
+
+function testToString() {
+    var subject = env.createNamedNode('http://www.example.com/subject');
+    var property = env.createNamedNode('http://www.example.com/property');
+    var object = env.createNamedNode('http://www.example.com/object');
+    var triple = env.createTriple(subject, property, object);
+    
+    assertEquals('<http://www.example.com/subject> <http://www.example.com/property> <http://www.example.com/object> .', triple.toString());
+}
+//]]>
+</script>
+</head>
+<body>
+</body>
+</html>

@@ -5,7 +5,7 @@
 <script language="JavaScript" src="../indexedRDF.js"></script>
 <script language="JavaScript">
 //<![CDATA[
-var testCount = 4;
+var testCount = 5;
 var env = null;
 
 function setUpPage() {
@@ -60,9 +60,6 @@ function testProperties() {
     assertEquals('Literal', langDtLiteral.interfaceName);
     assertEquals('en', langDtLiteral.language);
     assert(dt.equals(langDtLiteral.datatype));
-
-    // TODO: Automatic type conversion?
-    // TODO: PlainLiteral?
 }
 
 function testTypeConversion() {

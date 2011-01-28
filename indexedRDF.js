@@ -591,6 +591,84 @@ IRDFLiteral.fn = IRDFLiteral.prototype;
 
 /**
  * @private
+ * @constructor Creates a new IRDFTriple.
+ * @param subject {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-RDFNode">RDFNode</a>} The subject of the triple.
+ * @param property {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-RDFNode">RDFNode</a>} The property of the triple.
+ * @param object {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-RDFNode">RDFNode</a>} The object of the triple.
+ */
+var IRDFTriple = function(subject, property, object) { IRDFTriple.fn.init.apply(this, [subject, property, object]); };
+
+/**
+ * @class Implements <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-Triple">Triple</a>.
+ * @name IRDFTriple
+ */
+IRDFTriple.fn = IRDFTriple.prototype = {
+    init: function(subject, property, object) {
+	/**
+	 * @private
+	 * The subject of the triple.
+	 * @type <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-RDFNode">RDFNode</a>
+	 */
+	this._subject = subject;
+
+	/**
+	 * @private
+	 * The property of the triple.
+	 * @type <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-RDFNode">RDFNode</a>
+	 */
+	this._property = property;
+
+	/**
+	 * @private
+	 * The object of the triple.
+	 * @type <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-RDFNode">RDFNode</a>
+	 */
+	this._object = object;
+    },
+    
+    /*
+     * The subject of this triple.
+     * @field
+     * @name IRDFTriple#subject
+     * @type RDFNode, readonly
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Triple-subject">Triple#subject</a>
+     */
+    get subject() {
+	return this._subject;
+    },
+    /*
+     * The property of this triple.
+     * @field
+     * @name IRDFTriple#property
+     * @type RDFNode, readonly
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Triple-property">Triple#property</a>
+     */
+    get property() {
+	return this._property;
+    },
+    /*
+     * The object of this triple.
+     * @field
+     * @name IRDFTriple#object
+     * @type RDFNode, readonly
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Triple-object">Triple#object</a>
+     */
+    get object() {
+	return this._object;
+    },
+    
+    /**
+     * Return this triple as rendered in N-Triples notation.
+     * @return {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The value of this triple as rendered in N-Triples notation.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Triple-toString">Triple#toString</a>
+     */
+    toString: function() {
+	return this._subject.toNT() + ' ' + this._property.toNT() + ' ' + this._object.toNT() + ' .';
+    }
+};
+
+/**
+ * @private
  * @constructor Creates a new IRDFPrefixMap.
  */
 var IRDFPrefixMap = function() { IRDFPrefixMap.fn.init.apply(this); };
@@ -1570,6 +1648,12 @@ window.IRDFNamedNode = IRDFNamedNode;
  * @name window#IRDFLiteral
  */
 window.IRDFLiteral = IRDFLiteral;
+
+/**
+ * The IRDFTriple class (for reference to IRDFTriple constants).
+ * @name window#IRDFTriple
+ */
+window.IRDFTriple = IRDFTriple;
 
 /**
  * The IRDFPrefixMap class (for reference to IRDFPrefixMap constants).
