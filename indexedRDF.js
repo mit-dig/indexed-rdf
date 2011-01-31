@@ -676,7 +676,7 @@ IRDFTriple.fn = IRDFTriple.prototype = {
 var IRDFTripleAction = function(test, action) { IRDFTripleAction.fn.init.apply(this, [test, action]); };
 
 /**
- * @class Implements <a href="">TripleAction</a>.
+ * @class Implements <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-TripleAction">TripleAction</a>.
  * @name IRDFTripleAction
  */
 IRDFTripleAction.fn = IRDFTripleAction.prototype = {
@@ -716,6 +716,547 @@ IRDFTripleAction.fn = IRDFTripleAction.prototype = {
 		}
 	    }
 	}
+    }
+};
+
+/**
+ * @private
+ * @constructor Creates a new IRDFQuad.
+ * @param graph {IRDFGraph} The graph which the triple belongs to.
+ * @param triple {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-Triple">Triple</a>} The triple to associate with a graph.
+ */
+var IRDFQuad = function(graph, triple) { IRDFQuad.fn.init.apply(this, [graph, triple]); };
+
+/**
+ * @private
+ * @class Implements <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-Triple">Triple</a>, adding a property IRDFQuad#graph to store the graph which the triple is associated with.
+ * @name IRDFQuad
+ */
+IRDFQuad.fn = IRDFQuad.prototype = {
+    init: function(graph, triple) {
+	/**
+	 * @private
+	 * The subject of this quad.
+	 * @type <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-RDFNode">RDFNode</a>
+	 */
+	this.subject = triple.subject;
+
+	/**
+	 * @private
+	 * The property of this quad.
+	 * @type <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-RDFNode">RDFNode</a>
+	 */
+	this.property = triple.property;
+
+	/**
+	 * @private
+	 * The object of this quad.
+	 * @type <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-RDFNode">RDFNode</a>
+	 */
+	this.object = triple.object;
+
+	/**
+	 * @private
+	 * The graph which this quad belongs to.
+	 * @type IRDFGraph
+	 */
+	this.graph = graph;
+    },
+    
+    /**
+     * @private
+     * Return the IRDFTriple of this quad.
+     * @return {IRDFTriple} The triple consisting of the subject, property, and object of this quad.
+     */
+    toTriple: function() {
+	return new IRDFTriple(this.subject, this.property, this.object);
+    }
+    
+    /**
+     * @private
+     * Return the TriG serialization of this quad.
+     * @return {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The serialization of this quad in TriG (This should be equivalent to this.graph.toNT() + " {" + this.toTriple().toString() + "}").
+     */
+    toTriG: function() {
+	return this.graph.toNT() + ' {' + this.toTriple().toString() + '}';
+    }
+    
+    /**
+     * @private
+     * The TriG serialization of this quad.  This must be a property to allow keyPaths to use it.  It is equivalent to the return value of IRDFQuad#toTriG.
+     * @field
+     * @type <a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>
+     */
+    get _trig() {
+	return this.toTriG();
+    }
+};
+
+
+/**
+ * @private
+ * @constructor Creates a new non-persistent IRDFGraph.
+ * @param env {IRDFEnvironment} The environment in which to create the graph.
+ * @param triples {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-Triple">[]Triple</a>, optional} An array of Triples to be added to the created graph.
+ * @param iri {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-NamedNode">NamedNode</a>, optional} If specified, the graph will be made persistent with the specified IRI as its name.  Any pre-existing persistent triples associated with that graph IRI will be added to the new graph object in addition to any specified in the triples argument.  Any triples specified in the triples argument will be automatically persisted.
+ */
+var IRDFGraph = function(env, triples, iri) { IRDFGraph.fn.init.apply(this, [env, triples, iri]); };
+
+/**
+ * @class Implements <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-Graph">Graph</a>.  Most functions may return invalid answers before a persistent graph has finished loading.  The Graph#request property may be monitored immediately following graph creation to determine when the graph has finished loading.
+ * @name IRDFGraph
+ */
+// Need to assign an IRI to the graph in order to save it automatically?
+// Need to be able to find existing graphs
+// GraphLiteral?
+// Transient copies vs. durable copies
+IRDFGraph.fn = IRDFGraph.prototype = {
+    init: function(env, triples, iri) {
+	/**
+	 * @private
+	 * The IRDFEnvironment this graph was created in and is persisted in.
+	 * @type IRDFEnvironment
+	 */
+	this._env = env;
+	
+	/**
+	 * @private
+	 * An array of the Triples in this graph (the active cache, if persistent)
+	 * @type <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-Triple">[]Triple</a>
+	 */
+	if (this._triples == undefined ||
+	    this._triples == null) {
+	    this._triples = [];
+	} else {
+	    this._triples = triples;
+	}
+	
+	/**
+	 * @private
+	 * An Object acting as a nested associative array of the Triples in this graph (keyed first by subject, then by property, and finally by object).
+	 */
+	this._tripleIndex = new Object();
+	
+	/**
+	 * @private
+	 * An array of the TripleActions attached to this graph to be run when a triple is added.
+	 * @type <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-TripleAction">[]TripleAction</a>
+	 */
+	this._actions = [];
+	
+	// Add each triple to the index.
+	var pruneTriples = [];
+	for (var i = 0; i < this._triples.length; i++) {
+	    var triple = this._triples[i];
+	    
+	    if (this._tripleIndex[triple.subject] == undefined) {
+		this._tripleIndex[triple.subject] = new Object();
+	    }
+	    if (this._tripleIndex[triple.subject][triple.property] == undefined) {
+		this._tripleIndex[triple.subject][triple.property] = new Object();
+	    }
+	    if (this._tripleIndex[triple.subject][triple.property][triple.object] == undefined) {
+		this._tripleIndex[triple.subject][triple.property][triple.object] = true;
+	    } else {
+		// Plan on pruning this triple since it already exists.
+		pruneTriples.append(i);
+	    }
+	}
+	
+	// Prune redundant triples from this._triples.
+	pruneTriples.sort();
+	for (var i = pruneTriples.length; i > 0; i--) {
+	    this._triples.splice(pruneTriples[i - 1], 1);
+	}
+	
+	if (iri !== undefined) {
+	    /**
+	     * @private
+	     * The IRI serving as the name of the graph in the environment.
+	     * @type <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-NamedNode">NamedNode</a>
+	     */
+	    this._iri = iri;
+	    /**
+	     * If true, this graph is persistent, and changes will automatically be persisted.
+	     * @type <a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-boolean">boolean</a>
+	     */
+	    this.persistent = true;
+	    
+	    // Prepare to populate this._triples.
+	    var txn = this._env.db.transaction(['quads'],
+					       IDBTransaction.READ_ONLY);
+	    var store = txn.objectStore('quads');
+	    
+	    // First, persist any pre-defined triples.
+	    for (var i = 0; i < this._triples.length; i++) {
+		store.add(new IRDFQuad(this, this._triples[i]));
+	    }
+	    
+	    // Then load existing triples.
+	    var idx = store.index('graph');
+	    var range = IDBKeyRange.only(this._iri);
+	    
+	    /**
+	     * @private
+	     * The most recent IDBRequest used by the graph.
+	     * @type <a href="http://www.w3.org/TR/IndexedDB/#idl-def-IDBRequest">IDBRequest</a>
+	     */
+	    this._request = idx.openKeyCursor(range);
+	    
+	    this._request.onsuccess = function(event) {
+		var cursor = event.target.result;
+		if (cursor) {
+		    // Add each new Triple to the index and array.
+		    if (this._tripleIndex[cursor.value.subject] == undefined) {
+			this._tripleIndex[cursor.value.subject] = new Object();
+		    }
+		    if (this._tripleIndex[cursor.value.subject][cursor.value.property] == undefined) {
+			this._tripleIndex[cursor.value.subject][cursor.value.property] = new Object();
+		    }
+		    if (this._tripleIndex[cursor.value.subject][cursor.value.property][cursor.value.object] == undefined) {
+			this._triples.push(cursor.value.toTriple());
+			this._tripleIndex[cursor.value.subject][cursor.value.property][cursor.value.object] = true;
+		    }
+		    
+		    // And continue.
+		    cursor.continue();
+		}
+	    };
+	} else {
+	    this._iri = null;
+	    this.persistent = false;
+	    this._request = null;
+	}
+    },
+    
+    /**
+     * The number of Triples in this graph.  May be 0 before a persistent graph has finished loading.
+     * @field
+     * @name IRDFGraph#length
+     * @type <a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-unsigned-long">unsigned long</a>, readonly
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Graph-length">Graph#length</a>
+     */
+    get length() {
+	return this._triples.length;
+    },
+    
+    /**
+     * Add a Triple to the graph.  May not correctly add a Triple before a persistent graph has finished loading.  Graph#request may be monitored following this function call to ensure that the Triple was correctly added to a persistent graph.
+     * @param triple {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-Triple">Triple</a>} The Triple to be added to the graph.
+     * @return {IRDFGraph} This IRDFGraph.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Graph-add">Graph#add</a>
+     */
+    add: function(triple) {
+	// Check the index...
+	if (this._tripleIndex[triple.subject] == undefined ||
+	    this._tripleIndex[triple.subject][triple.property] == undefined ||
+	    this._tripleIndex[triple.subject][triple.property][triple.object] == undefined) {
+	    // Add the triple...
+	    this._triples.push(triple);
+	    
+	    // Add to the index too.
+	    if (this._tripleIndex[triple.subject] == undefined) {
+		this._tripleIndex[triple.subject] = new Object();
+	    }
+	    if (this._tripleIndex[triple.subject][triple.property] == undefined) {
+		this._tripleIndex[triple.subject][triple.property] = new Object();
+	    }
+	    if (this._tripleIndex[triple.subject][triple.property][triple.object] == undefined) {
+		this._tripleIndex[triple.subject][triple.property][triple.object] = true;
+	    }
+	    
+	    // And if we are persistent, try to persist the modification.
+	    if (this.persistent) {
+		var txn = this._env.db.transaction(['quads'],
+						   IDBTransaction.READ_WRITE);
+		var store = txn.objectStore('quads');
+		
+		this._request = store.add(new IRDFQuad(this, triple));
+	    }
+	    
+	    // Run all actions.
+	    this.actions.forEach(function(action) {
+		action.try(triple);
+	    });
+	}
+	
+	return this;
+    },
+    /**
+     * Remove a Triple from the graph.  May not correctly remove a Triple before a persistent graph has finished loading.  Graph#request may be monitored following this function call to ensure that the Triple was correctly removed from a persistent graph.
+     * @param triple {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-Triple">Triple</a>} The Triple to be removed from the graph.
+     * @return {IRDFGraph} This IRDFGraph.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Graph-remove">Graph#remove</a>
+     */
+    remove: function(triple) {
+	// Check the index...
+	if (this._tripleIndex[triple.subject] != undefined &&
+	    this._tripleIndex[triple.subject][triple.property] != undefined &&
+	    this._tripleIndex[triple.subject][triple.property][triple.object] != undefined) {
+	    delete this._tripleIndex[triple.subject][triple.property][triple.object];
+	    // This is slow. O(n)
+	    for (var i = 0; i < this._triples; i++) {
+		if (this._triples[i].subject.equals(triple.subject) &&
+		    this._triples[i].property.equals(triple.property) &&
+		    this._triples[i].object.equals(triple.object)) {
+		    this._triples.splice(i, 1);
+		}
+	    }
+	    
+	    // And if we are persistent, try to persist the modification.
+	    if (this.persistent) {
+		var txn = this._env.db.transaction(['quads'],
+						   IDBTransaction.READ_WRITE);
+		var store = txn.objectStore('quads');
+		
+		this._request = store.delete(new IRDFQuad(this, triple));
+	    }
+	}
+	
+	return this;
+    },
+    
+    /**
+     * Return an Array containing the Triples in this graph.  May return an empty Array before a persistent graph has finished loading.
+     * @return {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-Triple">[]Triple</a>} The Triples in this graph.  The order of the Triples is arbitrary.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Graph-toArray">Graph#toArray</a>
+     */
+    toArray: function() {
+	return this._triples.slice(0);
+    },
+    
+    /**
+     * Existential quantification.  Returns true if at least one Triple in the graph causes a callback to return true.
+     * @param callback {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-TripleFilter">TripleFilter</a>} A filter against which to test Triples.
+     * @return {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-boolean">boolean</a>} If true, at least one Triple in the graph caused the callback to return true.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Graph-some">Graph#some</a>
+     */
+    some: function(callback) {
+	return this._triples.some(function(triple) {
+	    return ((typeof callback === 'function' &&
+		     callback(triple)) ||
+		    (callback.test &&
+		     typeof callback.test === 'function' &&
+		     callback.test(triple)));
+	});
+    },
+    /**
+     * Universal quantification.  Returns true if all Triples in the graph cause a callback to return true.
+     * @param callback {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-TripleFilter">TripleFilter</a>} A filter against which to test Triples.
+     * @return {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-boolean">boolean</a>} If true, all Triples in the graph caused the callback to return true.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Graph-every">Graph#every</a>
+     */
+    every: function(callback) {
+	return this._triples.every(function(triple) {
+	    return ((typeof callback === 'function' &&
+		     callback(triple)) ||
+		    (callback.test &&
+		     typeof callback.test === 'function' &&
+		     callback.test(triple)));
+	});
+    },
+    /**
+     * Unique existential quantification.  Returns true if exactly one Triple in the graph causes a callback to return true.
+     * @param callback {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-TripleFilter">TripleFilter</a>} A filter against which to test Triples.
+     * @return {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-boolean">boolean</a>} If true, exactly one Triple in the graph caused the callback to return true.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Graph-the">Graph#the</a>
+     */
+    the: function(callback) {
+	var count = 0;
+	for (var i = 0; i < this._triples.length; i++) {
+	    if ((typeof callback === 'function' &&
+		 callback(triple)) ||
+		(callback.test &&
+		 typeof callback.test === 'function' &&
+		 callback.test(triple))) {
+		count++;
+	    }
+	    if (count > 1) {
+		return false;
+	    }
+	}
+	
+	return count == 1;
+    },
+    
+    /**
+     * Create a new non-persistent graph containing all Triples which cause a callback to return true.
+     * @param filter {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-TripleFilter">TripleFilter</a>} A filter against which to test Triples.
+     * @return {IRDFGraph} The new non-persistent graph containing all Triples in this graph which cause callback to return true.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Graph-filter">Graph#filter</a>
+     */
+    filter: function(filter) {
+	return this.env.createGraph(this._triples.filter(function(triple) {
+	    return ((typeof filter === 'function' &&
+		     filter(triple)) ||
+		    (filter.test &&
+		     typeof filter.test === 'function' &&
+		     filter.test(triple)));
+	}));
+    },
+    /**
+     * Remove all Triples from this graph which cause a callback to return false.
+     * @param filter {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-TripleFilter">TripleFilter</a>} A filter against which to test Triples.
+     * @return {IRDFGraph} This IRDFGraph.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Graph-apply">Graph#apply</a>
+     */
+    apply: function(filter) {
+	this._triples.slice(0).forEach(function(triple) {
+	    if ((typeof filter === 'function' &&
+		 filter(triple)) ||
+		(filter.test &&
+		 typeof filter.test === 'function' &&
+		 filter.test(triple))) {
+		// Do nothing.
+	    } else {
+		// This is slow! O(n^2)!
+		this.remove(triple);
+	    }
+	});
+	
+	return this;
+    },
+    
+    /**
+     * Execute a callback once on each Triple in this graph.
+     * @param callback {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-TripleCallback">TripleCallback</a>} A callback to execute for each Triple.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Graph-forEach">Graph#forEach</a>
+     */
+    forEach: function(callback) {
+	this._triples.forEach(function(triple) {
+	    if (typeof callback === 'function') {
+		callback(triple);
+	    } else if (callback.run &&
+		       typeof callback.run === 'function') {
+		callback.run(triple);
+	    }
+	});
+    },
+    
+    /**
+     * Return a new non-persistent graph which is the logical concatenation of this graph and the graph passed as an argument to this function.
+     * @param graph {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-Graph">Graph</a>} The graph to take the concatenation of this graph with.
+     * @return {IRDFGraph} A new non-persistent graph containing the logical concatenation of this graph and the graph passed as an argument to this function.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Graph-merge">Graph#merge</a>
+     */
+    merge: function(graph) {
+	return this.env.createGraph(this._triples.concat(graph.toArray()));
+    },
+    /**
+     * Concatenate another graph with this graph.  Graph#request will only indicate the status of the addition of a single triple when persisting, rather than all triples in the import.
+     * @param graph {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-Graph">Graph</a>} The graph to concatenate with this graph.
+     * @return {IRDFGraph} This IRDFGraph.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Graph-import">Graph#import</a>
+     */
+    import: function(graph) {
+	var triples = graph.toArray();
+	for (var i = 0; i < triples.length; i++) {
+	    this.add(triples[i]);
+	}
+	return this;
+    },
+    
+    /**
+     * An array of the actions to run when a Triple is added to the graph.
+     * @field
+     * @name IRDFGraph#actions
+     * @type <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-TripleAction">[]TripleAction</a>
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Graph-actions">Graph#actions</a>
+     */
+    get actions() {
+	return this._actions;
+    },
+    /**
+     * Add a new TripleAction to the set of actions to be run when a Triple is added to the graph.
+     * @param action {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-TripleAction">TripleAction</a>} The TripleAction to be added.
+     * @param run {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-boolean">boolean</a>} If true, the action will be run immediately on all existing triples in the graph.
+     * @return {IRDFGraph} This IRDFGraph.
+     * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Graph-addAction">Graph#addAction</a>
+     */
+    addAction: function(action, run) {
+	this._actions.append(action);
+	if (run) {
+	    this.forEach(action.try);
+	}
+    },
+    
+    // indexedRDF-specific functions.
+    /**
+     * The IRI under which this graph is persisted.
+     * @field
+     * @name IRDFGraph#iri
+     * @type IRDFNamedNode, readonly
+     */
+    get iri() {
+	return this._iri;
+    },
+    /**
+     * The environment in which this graph is persisted.
+     * @field
+     * @name IRDFGraph#env
+     * @type IRDFEnvironment, readonly
+     */
+    get env() {
+	return this._env;
+    },
+    /**
+     * The most recent IDBRequest performed to persist this graph.
+     * @field
+     * @name IRDFGraph#request
+     * @type <a href="http://www.w3.org/TR/IndexedDB/#idl-def-IDBRequest">IDBRequest</a>, readonly
+     */
+    get request() {
+	return this._request;
+    },
+    
+    /**
+     * Return a non-persistent copy of this graph.
+     * @return {IRDFGraph} The new non-persistent copy of this graph.
+     */
+    nonpersistentCopy: function() {
+	return this.env.createGraph(this._triples);
+    },
+    
+    /**
+     * Persist this graph using the given IRI as its name.  If the graph is already persistent, all future changes to this graph will be persisted under the new IRI.
+     * @param iri {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The IRI to name this persistent graph.
+     * @param env {IRDFEnvironment, optional} The environment in which to persist this graph.  If not specified, it will be persisted in the environment in which the graph was created.
+     * @return {IRDFGraph} This IRDFGraph.
+     */
+    persist: function(iri, env) {
+	this.persistent = true;
+	this._iri = this.env.createNamedNode(iri);
+	
+	if (env == undefined) {
+	    env = this._env;
+	}
+	
+	var txn = env.db.transaction(['quads'],
+				     IDBTransaction.READ_ONLY);
+	var store = txn.objectStore('quads');
+	
+	// Persist any pre-defined triples.
+	for (var i = 0; i < this._triples.length; i++) {
+	    store.add(new IRDFQuad(this, this._triples[i]));
+	}
+    },
+    /**
+     * Stop persisting this graph and remove its persistence from the environment.  (To simply make this graph nonpersistent without removing it, set IRDFGraph#persistent to false.)
+     * @return {IRDFGraph} This IRDFGraph.
+     */
+    unpersist: function() {
+	if (this.persistent && this.iri) {
+	    var txn = env.db.transaction(['quads'],
+					 IDBTransaction.READ_ONLY);
+	    var store = txn.objectStore('quads');
+	    
+	    // Delete any pre-defined triples.
+	    for (var i = 0; i < this._triples.length; i++) {
+		store.delete(new IRDFQuad(this, this._triples[i]));
+	    }
+	}
+	this.persistent = false;
+	this._iri = null;
     }
 };
 
@@ -1238,7 +1779,7 @@ IRDFEnvironment.prototype.createNamedNode = function(iri) {
  * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createLiteral">RDFEnvironment#createLiteral</a>
  */
 IRDFEnvironment.prototype.createLiteral = function(value, language, datatype) {
-    return new IRDFLiteral(value, language, datatype);
+    return new IRDFLiteral(value, language, this.createNamedNode(datatype));
 };
 
 /**
@@ -1266,11 +1807,16 @@ IRDFEnvironment.prototype.createTriple = function(subject, property, object) {
 /**
  * Create a new graph in the environment.
  * @param triples {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-Triple">[]Triple</a>, optional} An array of Triples to be added to the created graph.
+ * @param iri {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>, optional} If specified, the graph will be made persistent with the specified IRI as its name.
  * @return {IRDFGraph} The new graph.
  * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createGraph">RDFEnvironment#createGraph</a>
  */
-IRDFEnvironment.prototype.createGraph = function(triples) {
-    return new IRDFGraph(triples);
+IRDFEnvironment.prototype.createGraph = function(triples, iri) {
+    if (iri == undefined) {
+	return new IRDFGraph(this, triples);
+    } else {
+	return new IRDFGraph(this, triples, this.createNamedNode(iri));
+    }
 };
 
 /**
@@ -1328,6 +1874,15 @@ IRDFEnvironment.prototype.createPrefixMap = function(empty) {
     }
     
     return map;
+};
+
+/**
+ * Retrieve a persistent IRDFGraph having the specified IRI as a name.
+ * @param iri {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The IRI of the persistent IRDFGraph being retrieved.
+ * @return {IRDFGraph} The persistent IRDFGraph having iri as its name, or null if iri is not the name of any known graph.
+ */
+IRDFEnvironment.prototype.retrieveGraph = function(iri) {
+    return new IRDFGraph(this, [], this.createNamedNode(iri));
 };
 
 /**
@@ -1596,18 +2151,44 @@ IRDFFactory.prototype = {
         // NOTE: This doesn't actually work from a file:/// URI in Firefox!!
 	var idbRequest = indexedDB.open(name);
 	var irdfRequest = new IRDFRequest(idbRequest);
+	var db = null;
 	
 	idbRequest.onsuccess = function(evt) {
-	    var irdfEvent = new Object();
+	    if (db == null) {
+		db = idbRequest.result;
+	    }
 	    
-	    irdfEvent.source = irdfRequest;
-	    irdfEvent.result = new IRDFEnvironment(idbRequest.result);
-	    
-	    if (irdfRequest.onsuccess &&
-		typeof(irdfRequest.onsuccess) == 'function') {
-		irdfRequest.onsuccess(irdfEvent);
+	    if (db.version != '0.1') {
+		// Initialize the store.
+		var newRequest = db.setVersion('0.1');
+		var oldSuccess = idbRequest.onsuccess;
+		var oldError = idbRequest.onerror;
+		
+		newRequest.onsuccess = function(event) {
+		    // Create the objectStore for quads.
+		    var objectStore = db.createObjectStore('quads', { keyPath: '_trig' });
+		    
+		    objectStore.createIndex('graph', 'graph', { unique: false });
+		    oldSuccess(event);
+		}
+		newRequest.onerror = function(event) {
+		    db.close();
+		    oldError(event);
+		};
+		
+		idbRequest = newRequest;
 	    } else {
-		irdfEvent.result.close();
+		var irdfEvent = new Object();
+		
+		irdfEvent.source = irdfRequest;
+		irdfEvent.result = new IRDFEnvironment(db);
+		
+		if (irdfRequest.onsuccess &&
+		    typeof(irdfRequest.onsuccess) == 'function') {
+		    irdfRequest.onsuccess(irdfEvent);
+		} else {
+		    irdfEvent.result.close();
+		}
 	    }
 	}
 	idbRequest.onerror = function(evt) {

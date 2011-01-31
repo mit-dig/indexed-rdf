@@ -1,0 +1,87 @@
+<html>
+<head>
+<title>IRDFTripleAction Unit Tests</title>
+<script language="JavaScript" src="jsUnitCore.js"></script>
+<script language="JavaScript" src="../indexedRDF.js"></script>
+<script language="JavaScript">
+//<![CDATA[
+var testCount = 2;
+var env = null;
+
+function setUpPage() {
+    var req = window.indexedRDF.open("IRDFTripleActionTest");
+    
+    req.onsuccess = function(evt) {
+        env = evt.result;
+        finishSetUp();
+    };
+    req.onerror = function(evt) {
+        finishSetUp();
+    };
+    
+    setUpPageStatus = 'running';
+}
+
+function finishSetUp() {
+    setUpPageStatus = 'complete';
+}
+
+function tearDown() {
+    // Tear down the store only at the end.
+    testCount--;
+    if (testCount == 0) {
+        window.indexedRDF.deleteStore("IRDFTripleActionTest");
+    }
+}
+
+function testProperties() {
+    var test = function(t) { return t.subject.equals('http://www.example.com/'); }
+    var callback = function(t) { };
+    var action = env.createAction(test, callback);
+
+    assertEquals(test, action.test);
+    assertEquals(callback, action.action);
+}
+
+function testTry() {
+    var subject = env.createNamedNode('http://www.example.com/subject');
+    var property = env.createNamedNode('http://www.example.com/property');
+    var object = env.createNamedNode('http://www.example.com/object');
+    var triple = env.createTriple(subject, property, object);
+
+    var asserted;
+    var assertTest = function(t) { return t.subject.equals('http://www.example.com/subject'); }
+    var assertCallback = function(t) {
+        asserted = true;
+        assert(t.subject.equals('http://www.example.com/subject'));
+    };
+    var assertAction = env.createAction(assertTest, assertCallback);
+    var failTest = function(t) { return t.subject.equals('http://www.example.com/'); }
+    var failCallback = function(t) { fail(); }
+    var failAction = env.createAction(failTest, failCallback);
+
+    // Assert should run the action.
+    asserted = false;
+    assertAction.try(triple);
+    assert(asserted);
+    
+    // Fail should fail to run the action.
+    failAction.try(triple);
+
+    assertAction = env.createAction({test: assertTest}, {run: assertCallback});
+    failAction = env.createAction({test: failTest}, {run: failCallback});
+
+    // Assert should run the action.
+    asserted = false;
+    assertAction.try(triple);
+    assert(asserted);
+    
+    // Fail should fail to run the action.
+    failAction.try(triple);
+}
+//]]>
+</script>
+</head>
+<body>
+</body>
+</html>

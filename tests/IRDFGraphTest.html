@@ -1,0 +1,344 @@
+<html>
+<head>
+<title>IRDFGraph Unit Tests</title>
+<script language="JavaScript" src="jsUnitCore.js"></script>
+<script language="JavaScript" src="../indexedRDF.js"></script>
+<script language="JavaScript">
+//<![CDATA[
+var testCount = 2;
+var env = null;
+
+function setUpPage() {
+    var req = window.indexedRDF.open("IRDFGraphTest");
+    
+    req.onsuccess = function(evt) {
+        env = evt.result;
+        finishSetUp();
+    };
+    req.onerror = function(evt) {
+        finishSetUp();
+    };
+    
+    setUpPageStatus = 'running';
+}
+
+function finishSetUp() {
+    setUpPageStatus = 'complete';
+}
+
+function tearDown() {
+    // Tear down the store only at the end.
+    testCount--;
+    if (testCount == 0) {
+        window.indexedRDF.deleteStore("IRDFGraphTest");
+    }
+}
+
+function testProperties() {
+    var subject = env.createNamedNode('http://www.example.com/subject');
+    var property = env.createNamedNode('http://www.example.com/property');
+    var object = env.createNamedNode('http://www.example.com/object');
+    var triple = env.createTriple(subject, property, object);
+    var graph = env.createGraph();
+    
+    // Length should change.
+    assertEquals(0, graph.length);
+    graph.add(triple);
+    assertEquals(1, graph.length):
+    graph.remove(env.createTriple(subject, property, object));
+    assertEquals(0, graph.length);
+}
+
+function testAddRemove() {
+    var subject = env.createNamedNode('http://www.example.com/subject');
+    var property = env.createNamedNode('http://www.example.com/property');
+    var object = env.createNamedNode('http://www.example.com/object');
+    var triple = env.createTriple(subject, property, object);
+    var graph = env.createGraph();
+    
+    // We already test simple length.
+    assertEquals([], graph.toArray());
+    assertEquals(graph, graph.add(triple));
+    assertEquals([triple], graph.toArray());
+    
+    // Adding something already there should be fine.
+    assertEquals(graph, graph.add(env.createTriple(subject, property, object)));
+    assertEquals([triple], graph.toArray());
+    
+    // Removing something nonexistent should be fine.
+    assertEquals(graph, graph.remove(env.createTriple(object, property, subject)));
+    assertEquals([triple], graph.toArray());
+    
+    assertEquals(graph, graph.remove(env.createTriple(subject, property, object)));
+    assertEquals([], graph.toArray());
+}
+
+function testSomeEveryThe() {
+    var subject = env.createNamedNode('http://www.example.com/subject');
+    var property = env.createNamedNode('http://www.example.com/property');
+    var object = env.createNamedNode('http://www.example.com/object');
+    var graph = env.createGraph([env.createTriple(subject, property, object),
+                                 env.createTriple(object, property, subject),
+                                 env.createTriple(subject, property, subject),
+                                 env.createTriple(object, property, object)]);
+    
+    // Some triples have the same subject and object.
+    var subjEqlObj = function(triple) {
+        return triple.subject.equals(triple.object);
+    };
+    assert(graph.some(subjEqlObj));
+    // But not all.
+    assert(!graph.every(subjEqlObj));
+    // And there is more than one which does.
+    assert(!graph.the(subjEqlObj));
+    
+    // All triples have the same property value.
+    var property = null;
+    var shareProperty = { test: function(triple) {
+        if (property == null) {
+            property = triple.property;
+            return true;
+        } else {
+            return triple.property == property;
+        }
+    }};
+    assert(graph.some(shareProperty));
+    assert(graph.all(shareProperty));
+    assert(!graph.the(shareProperty));
+
+    // Only one has a subject of subject and an object that isn't.
+    var subjIsSubj = function(triple) {
+        return triple.subject.equals(subject) && !triple.object.equals(subject);
+    };
+    assert(graph.some(shareProperty));
+    assert(!graph.all(shareProperty));
+    assert(graph.the(shareProperty));
+    
+    // None have a subject, predicate, and object that are the same.
+    var allSame = { test: function(triple) {
+        return triple.subject.equals(triple.property) &&
+               triple.property.equals(triple.object);
+    }};
+    assert(!graph.some(shareProperty));
+    assert(!graph.all(shareProperty));
+    assert(!graph.the(shareProperty));
+}
+
+// The tripleEquals function returns a callback which is true when the
+// tested triple equals the provided subject, property, and object.
+function tripleEquals(s, p, o) {
+    return function(triple) {
+        return triple.subject.equals(s) &&
+               triple.property.equals(p) &&
+               triple.object.equals(o);
+    };
+};
+    
+function testFilterApply() {
+    var subject = env.createNamedNode('http://www.example.com/subject');
+    var property = env.createNamedNode('http://www.example.com/property');
+    var object = env.createNamedNode('http://www.example.com/object');
+    var graph = env.createGraph([env.createTriple(subject, property, object),
+                                 env.createTriple(object, property, subject),
+                                 env.createTriple(subject, property, subject),
+                                 env.createTriple(object, property, object)]);
+
+    assertEquals(4, graph.length);
+    
+    // Some triples have the same subject and object.
+    var subjEqlObj = function(triple) {
+        return triple.subject.equals(triple.object);
+    };
+    // Filtering doesn't return the same graph.
+    assertNotEquals(graph, graph.filter(subjEqlObj));
+    // But rather, a subgraph where the filter is true for everything...
+    assert(!graph.every(subjEqlObj));
+    assert(graph.filter(subjEqlObj).every(subjEqlObj));
+    // Consisting of every triple where it's true.
+    assertEquals(2, graph.filter(subjEqlObj).length);
+    assert(graph.filter(subjEqlObj).the(tripleEquals(subject, property, subject)));
+    assert(graph.filter(subjEqlObj).the(tripleEquals(object, property, object)));
+
+    // By the way, it shouldn't matter about the object bit.
+    subjEqlObj = { test: function(triple) {
+        return triple.subject.equals(triple.object);
+    }};
+    // Filtering doesn't return the same graph.
+    assertNotEquals(graph, graph.filter(subjEqlObj));
+    // But rather, a subgraph where the filter is true for everything...
+    assert(!graph.every(subjEqlObj));
+    assert(graph.filter(subjEqlObj).every(subjEqlObj));
+    // Consisting of every triple where it's true.
+    assertEquals(2, graph.filter(subjEqlObj).length);
+    assert(graph.filter(subjEqlObj).the(tripleEquals(subject, property, subject)));
+    assert(graph.filter(subjEqlObj).the(tripleEquals(object, property, object)));
+    
+    // Applying DOES return the same graph.
+    subjEqlObj = function(triple) {
+        return triple.subject.equals(triple.object);
+    };
+    
+    assert(graph.some(tripleEquals(subject, property, object)));
+    assert(graph.some(tripleEquals(object, property, subject)));
+    assert(graph.the(tripleEquals(subject, property, subject)));
+    assert(graph.the(tripleEquals(object, property, object)));
+    
+    assertEquals(graph, graph.apply(subjEqlObj));
+    // And now, every item in graph should have the filter be true.
+    assert(graph.every(subjEqlObj));
+    // Consisting of every triple where it's true.
+    assertEquals(2, graph.length);
+    assert(!graph.some(tripleEquals(subject, property, object)));
+    assert(!graph.some(tripleEquals(object, property, subject)));
+    assert(graph.the(tripleEquals(subject, property, subject)));
+    assert(graph.the(tripleEquals(object, property, object)));
+
+    graph = env.createGraph([env.createTriple(subject, property, object),
+                             env.createTriple(object, property, subject),
+                             env.createTriple(subject, property, subject),
+                             env.createTriple(object, property, object)]);
+
+    // By the way, it shouldn't matter about the object bit.
+    subjEqlObj = { test: function(triple) {
+        return triple.subject.equals(triple.object);
+    }};
+    
+    assert(graph.some(tripleEquals(subject, property, object)));
+    assert(graph.some(tripleEquals(object, property, subject)));
+    assert(graph.the(tripleEquals(subject, property, subject)));
+    assert(graph.the(tripleEquals(object, property, object)));
+    assertEquals(4, graph.length);
+    
+    assertEquals(graph, graph.apply(subjEqlObj));
+    // And now, every item in graph should have the filter be true.
+    assert(graph.every(subjEqlObj));
+    // Consisting of every triple where it's true.
+    assertEquals(2, graph.length);
+    assert(!graph.some(tripleEquals(subject, property, object)));
+    assert(!graph.some(tripleEquals(object, property, subject)));
+    assert(graph.the(tripleEquals(subject, property, subject)));
+    assert(graph.the(tripleEquals(object, property, object)));
+}
+
+function testForEach() {
+    var subject = env.createNamedNode('http://www.example.com/subject');
+    var property = env.createNamedNode('http://www.example.com/property');
+    var object = env.createNamedNode('http://www.example.com/object');
+    var graph = env.createGraph([env.createTriple(subject, property, object),
+                                 env.createTriple(object, property, subject),
+                                 env.createTriple(subject, property, subject),
+                                 env.createTriple(object, property, object)]);
+    
+    var count = 0;
+    var sameCount = 0;
+    
+    // ForEach iterates over every item.
+    var doCount = function(triple) {
+        count++;
+        if (triple.subject.equals(triple.object)) {
+            sameCount++;
+        }
+    };
+    graph.forEach(doCount);
+    assertEquals(4, count);
+    assertEquals(2, sameCount);
+    
+    // And can be an object.
+    count = 0;
+    sameCount = 0;
+    doCount = { run: function(triple) {
+        count++;
+        if (triple.subject.equals(triple.object)) {
+            sameCount++;
+        }
+    }};
+    graph.forEach(doCount);
+    assertEquals(4, count);
+    assertEquals(2, sameCount);
+}
+
+function testMergeImport() {
+    var subject = env.createNamedNode('http://www.example.com/subject');
+    var property = env.createNamedNode('http://www.example.com/property');
+    var object = env.createNamedNode('http://www.example.com/object');
+    var graph1 = env.createGraph([env.createTriple(subject, property, object),
+                                  env.createTriple(object, property, subject)]);
+    var graph2 = env.createGraph([env.createTriple(object, property, subject),
+                                  env.createTriple(subject, property, subject),
+                                  env.createTriple(object, property, object)]);
+    
+    // Merge creates a new graph.
+    assertNotEquals(graph1, graph1.merge(graph2));
+    assertNotEquals(graph2, graph1.merge(graph2));
+    
+    // Merge contains the concatenation of the two graphs.
+    assertEquals(2, graph1.length);
+    assertEquals(3, graph2.length);
+    assertEquals(4, graph1.merge(graph2).length);
+    
+    // Containing all of the triples in both.
+    assert(graph1.merge(graph2).the(tripleEquals(subject, property, object)));
+    assert(graph1.merge(graph2).the(tripleEquals(object, property, subject)));
+    assert(graph1.merge(graph2).the(tripleEquals(subject, property, subject)));
+    assert(graph1.merge(graph2).the(tripleEquals(object, property, object)));
+    
+    // Import, on the other hand, should change the graph.
+    assert(graph1.the(tripleEquals(subject, property, object)));
+    assert(graph1.the(tripleEquals(object, property, subject)));
+    assert(!graph1.the(tripleEquals(subject, property, subject)));
+    assert(!graph1.the(tripleEquals(object, property, object)));
+    
+    assertEquals(graph1, graph1.import(graph2));
+    assertEquals(4, graph1.length);
+
+    // Containing all of the triples in both.
+    assert(graph1.the(tripleEquals(subject, property, object)));
+    assert(graph1.the(tripleEquals(object, property, subject)));
+    assert(graph1.the(tripleEquals(subject, property, subject)));
+    assert(graph1.the(tripleEquals(object, property, object)));
+}
+
+function testActions() {
+    var subject = env.createNamedNode('http://www.example.com/subject');
+    var property = env.createNamedNode('http://www.example.com/property');
+    var object = env.createNamedNode('http://www.example.com/object');
+    var graph = env.createGraph([env.createTriple(subject, property, object),
+                                 env.createTriple(object, property, subject)]);
+    
+    // Actions are initially empty.
+    assertEquals([], graph.actions);
+    
+    // But we can add one!
+    var count = 0;
+    var action = env.createAction(function (triple) { triple.subject.equals(subject); },
+                                  function (triple) { count++; });
+    assertEquals(graph, graph.addAction(action));
+    
+    // Which should do nothing.
+    assertEquals(0, count);
+    
+    // Until we add something.
+    graph.add(env.createTriple(subject, property, subject));
+    assertEquals(1, count);
+    
+    // But it can run automatically if we ask it!
+    count = 0;
+    action = env.createAction(function (triple) { triple.subject.equals(object); },
+                              function (triple) { count++; });
+    assertEquals(graph, graph.addAction(action, true));
+    assertEquals(1, count);
+    graph.add(env.createTriple(object, property, object));
+    assertEquals(2, count);
+}
+
+function testPersistence() {
+    // TODO: Test #iri, #env, #persistent
+    // TODO: Test #nonpersistentCopy, #persist, #unpersist
+    // TODO: Test true persistence between page loads.
+}
+//]]>
+</script>
+</head>
+<body>
+</body>
+</html>
