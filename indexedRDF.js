@@ -1179,6 +1179,7 @@ IRDFGraph.fn = IRDFGraph.prototype = {
 	if (run) {
 	    this.forEach(action.try);
 	}
+        return this;
     },
     
     // indexedRDF-specific functions.

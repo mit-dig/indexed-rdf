@@ -313,13 +313,15 @@ function testActions() {
                                  env.createTriple(object, property, subject)]);
     
     // Actions are initially empty.
-    assertEquals([], graph.actions);
+    assertEquals(0, graph.actions.length);
     
     // But we can add one!
     var count = 0;
-    var action = env.createAction(function (triple) { triple.subject.equals(subject); },
+    var action = env.createAction(function (triple) { return triple.subject.equals(subject); },
                                   function (triple) { count++; });
     assertEquals(graph, graph.addAction(action));
+    assertEquals(1, graph.actions.length);
+    assertEquals(action, graph.actions[0]);
     
     // Which should do nothing.
     assertEquals(0, count);
@@ -330,7 +332,7 @@ function testActions() {
     
     // But it can run automatically if we ask it!
     count = 0;
-    action = env.createAction(function (triple) { triple.subject.equals(object); },
+    action = env.createAction(function (triple) { return triple.subject.equals(object); },
                               function (triple) { count++; });
     assertEquals(graph, graph.addAction(action, true));
     assertEquals(1, count);
