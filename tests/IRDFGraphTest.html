@@ -5,7 +5,7 @@
 <script language="JavaScript" src="../indexedRDF.js"></script>
 <script language="JavaScript">
 //<![CDATA[
-var testCount = 2;
+var testCount = 8;
 var env = null;
 
 function setUpPage() {
@@ -44,7 +44,7 @@ function testProperties() {
     // Length should change.
     assertEquals(0, graph.length);
     graph.add(triple);
-    assertEquals(1, graph.length):
+    assertEquals(1, graph.length);
     graph.remove(env.createTriple(subject, property, object));
     assertEquals(0, graph.length);
 }
@@ -132,7 +132,7 @@ function tripleEquals(s, p, o) {
                triple.property.equals(p) &&
                triple.object.equals(o);
     };
-};
+}
     
 function testFilterApply() {
     var subject = env.createNamedNode('http://www.example.com/subject');
