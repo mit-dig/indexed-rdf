@@ -859,7 +859,7 @@ IRDFGraph.fn = IRDFGraph.prototype = {
 		this._tripleIndex[triple.subject][triple.property][triple.object] = true;
 	    } else {
 		// Plan on pruning this triple since it already exists.
-		pruneTriples.append(i);
+		pruneTriples.push(i);
 	    }
 	}
 	
@@ -1175,7 +1175,7 @@ IRDFGraph.fn = IRDFGraph.prototype = {
      * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Graph-addAction">Graph#addAction</a>
      */
     addAction: function(action, run) {
-	this._actions.append(action);
+	this._actions.push(action);
 	if (run) {
 	    this.forEach(action.try);
 	}
