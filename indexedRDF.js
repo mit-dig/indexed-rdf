@@ -1101,6 +1101,7 @@ IRDFGraph.fn = IRDFGraph.prototype = {
      * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Graph-apply">Graph#apply</a>
      */
     apply: function(filter) {
+	graph = this;
 	this._triples.slice(0).forEach(function(triple) {
 	    if ((typeof filter === 'function' &&
 		 filter(triple)) ||
@@ -1110,7 +1111,7 @@ IRDFGraph.fn = IRDFGraph.prototype = {
 		// Do nothing.
 	    } else {
 		// This is slow! O(n^2)!
-		this.remove(triple);
+		graph.remove(triple);
 	    }
 	});
 	
