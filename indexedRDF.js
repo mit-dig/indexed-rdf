@@ -629,7 +629,8 @@ var IRDFGraphLiteral = function(value) { IRDFGraphLiteral.fn.init.apply(this, [v
 /**
  * @class Implements <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-GraphLiteral">GraphLiteral</a>.
  * @name IRDFGraphLiteral
- * @augments IRDFNode, IRDFGraph
+ * @augments IRDFNode
+ * @augments IRDFGraph
  */
 IRDFGraphLiteral.prototype = new IRDFNode();
 
@@ -1922,7 +1923,7 @@ IRDFEnvironment.prototype.__defineGetter__('name', function() {
 IRDFEnvironment.prototype.createBlankNode = function() {
     // Generate a random (Version 4) UUID for each bnode to try to keep them
     // from ever colliding.
-    return new IRDFBlankNode('bnode_' + genBnodeUUID());
+    return new IRDFBlankNode('bnode' + genBnodeUUID());
 };
 
 /**
