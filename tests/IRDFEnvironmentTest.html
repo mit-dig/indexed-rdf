@@ -258,7 +258,7 @@ function testNodeConstructors() {
     assertEquals('Literal', o.interfaceName);
     assertEquals('literal', o.value);
     assertNull(o.language);
-    assertEquals('http://www.example.com/', o.datatype);
+    assert(o.datatype.equals('http://www.example.com/'));
 
     o = env.createGraphLiteral();
     assertEquals('GraphLiteral', o.interfaceName);

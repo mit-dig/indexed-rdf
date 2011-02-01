@@ -596,6 +596,113 @@ IRDFLiteral.fn = IRDFLiteral.prototype;
 
 /**
  * @private
+ * @constructor Creates a new IRDFGraphLiteral.
+ * @param value {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-any">any</a>} The internal value of the IRDFGraphLiteral used to stringify it.  The value must respond to toString().
+ */
+var IRDFGraphLiteral = function(value) { IRDFGraphLiteral.fn.init.apply(this, [value]); };
+
+/**
+ * @class Implements <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-GraphLiteral">GraphLiteral</a>.
+ * @name IRDFGraphLiteral
+ * @augments IRDFNode, IRDFGraph
+ */
+IRDFGraphLiteral.prototype = new IRDFNode();
+
+IRDFGraphLiteral.prototype.init = function(value) {
+    IRDFNode.fn.init.apply(this, [value]);
+    this._interfaceName = 'GraphLiteral';
+};
+
+IRDFGraphLiteral.prototype.toString = function() {
+    string = '{ ';
+    triples = this.value.toArray();
+    
+    for (var i = 0; i < triples; i++) {
+	string += triples[i].toString() + "\n  " ;
+    }
+    
+    string += '}';
+    
+    return string;
+};
+
+IRDFGraphLiteral.prototype.toNT = function() {
+    string = '{ ';
+    triples = this.value.toArray();
+    
+    for (var i = 0; i < triples; i++) {
+	string += triples[i].toString() + "\n  ";
+    }
+    
+    string += '}';
+    
+    return string;
+};
+
+// And don't forget the Graph interface.
+
+IRDFGraphLiteral.prototype.__defineGetter__('length', function() {
+    return this.value.length;
+});
+
+IRDFGraphLiteral.prototype.add = function(triple) {
+    this.value.add(triple);
+    return this;
+};
+
+IRDFGraphLiteral.prototype.remove = function(triple) {
+    this.value.remove(triple);
+    return this;
+};
+
+IRDFGraphLiteral.prototype.toArray = function() {
+    return this.value.toArray();
+};
+
+IRDFGraphLiteral.prototype.some = function(callback) {
+    return this.value.some(callback);
+};
+
+IRDFGraphLiteral.prototype.every = function(callback) {
+    return this.value.every(callback);
+};
+
+IRDFGraphLiteral.prototype.the = function(callback) {
+    return this.value.the(callback);
+};
+
+IRDFGraphLiteral.prototype.filter = function(filter) {
+    return this.value.filter(filter);
+};
+
+IRDFGraphLiteral.prototype.apply = function(apply) {
+    return this.value.apply(filter);
+};
+
+IRDFGraphLiteral.prototype.forEach = function(callback) {
+    this.value.forEach(callback);
+};
+
+IRDFGraphLiteral.prototype.merge = function(graph) {
+    return this.value.merge(graph);
+};
+
+IRDFGraphLiteral.prototype.import = function(graph) {
+    return this.value.import(graph);
+};
+
+IRDFGraphLiteral.prototype.__defineGetter__('actions', function() {
+    return this.value.actions;
+});
+
+IRDFGraphLiteral.prototype.addAction = function(action, run) {
+    return this.value.addAction(action, run);
+};
+
+IRDFGraphLiteral.fn = IRDFGraphLiteral.prototype;
+
+/**
+ * @private
  * @constructor Creates a new IRDFTriple.
  * @param subject {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-RDFNode">RDFNode</a>} The subject of the triple.
  * @param property {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-RDFNode">RDFNode</a>} The property of the triple.
