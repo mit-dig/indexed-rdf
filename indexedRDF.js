@@ -770,7 +770,7 @@ IRDFQuad.fn = IRDFQuad.prototype = {
      */
     toTriple: function() {
 	return new IRDFTriple(this.subject, this.property, this.object);
-    }
+    },
     
     /**
      * @private
@@ -779,7 +779,7 @@ IRDFQuad.fn = IRDFQuad.prototype = {
      */
     toTriG: function() {
 	return this.graph.toNT() + ' {' + this.toTriple().toString() + '}';
-    }
+    },
     
     /**
      * @private
