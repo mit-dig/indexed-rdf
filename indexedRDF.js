@@ -995,7 +995,7 @@ IRDFGraph.fn = IRDFGraph.prototype = {
 	    this._tripleIndex[triple.subject][triple.property][triple.object] != undefined) {
 	    delete this._tripleIndex[triple.subject][triple.property][triple.object];
 	    // This is slow. O(n)
-	    for (var i = 0; i < this._triples; i++) {
+	    for (var i = 0; i < this._triples.length; i++) {
 		if (this._triples[i].subject.equals(triple.subject) &&
 		    this._triples[i].property.equals(triple.property) &&
 		    this._triples[i].object.equals(triple.object)) {

@@ -57,20 +57,27 @@ function testAddRemove() {
     var graph = env.createGraph();
     
     // We already test simple length.
-    assertEquals([], graph.toArray());
+    assertEquals(0, graph.toArray().length);
     assertEquals(graph, graph.add(triple));
-    assertEquals([triple], graph.toArray());
+    assertEquals(1, graph.toArray().length);
+    assertEquals(triple, graph.toArray()[0]);
     
     // Adding something already there should be fine.
     assertEquals(graph, graph.add(env.createTriple(subject, property, object)));
-    assertEquals([triple], graph.toArray());
+    assertEquals(1, graph.toArray().length);
+    assertEquals(triple, graph.toArray()[0]);
     
     // Removing something nonexistent should be fine.
     assertEquals(graph, graph.remove(env.createTriple(object, property, subject)));
-    assertEquals([triple], graph.toArray());
+    assertEquals(1, graph.toArray().length);
+    assertEquals(triple, graph.toArray()[0]);
     
+    // Incidentally, make sure that removing a triple works with entirely different objects.
+    subject = env.createNamedNode('http://www.example.com/subject');
+    property = env.createNamedNode('http://www.example.com/property');
+    object = env.createNamedNode('http://www.example.com/object');
     assertEquals(graph, graph.remove(env.createTriple(subject, property, object)));
-    assertEquals([], graph.toArray());
+    assertEquals(0, graph.toArray().length);
 }
 
 function testSomeEveryThe() {
