@@ -689,7 +689,8 @@ IRDFGraphLiteral.prototype.merge = function(graph) {
 };
 
 IRDFGraphLiteral.prototype.import = function(graph) {
-    return this.value.import(graph);
+    this.value.import(graph);
+    return this;
 };
 
 IRDFGraphLiteral.prototype.__defineGetter__('actions', function() {
@@ -697,7 +698,8 @@ IRDFGraphLiteral.prototype.__defineGetter__('actions', function() {
 });
 
 IRDFGraphLiteral.prototype.addAction = function(action, run) {
-    return this.value.addAction(action, run);
+    this.value.addAction(action, run);
+    return this;
 };
 
 IRDFGraphLiteral.fn = IRDFGraphLiteral.prototype;

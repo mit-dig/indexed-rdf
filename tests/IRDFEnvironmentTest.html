@@ -284,7 +284,8 @@ function testNodeConstructors() {
     // And now back to graph literals.
     o = env.createGraphLiteral(graph);
     assertEquals('GraphLiteral', o.interfaceName);
-    assertNotEquals(graph, o.value);
+//    assertNotEquals(graph, o.value);
+    assertEquals(graph, o.value);
     assertEquals(1, o.value.length);
     assertEquals(triple, o.value.toArray()[0]);
 }
