@@ -639,6 +639,18 @@ IRDFGraphLiteral.prototype.toNT = function() {
     return string;
 };
 
+IRDFGraphLiteral.prototype.equals = function(otherNode) {
+    // We punt graph comparison to the graph itself.
+    if (otherNode.value && otherNode.interfaceName) {
+	return (this.interfaceName == otherNode.interfaceName) &&
+	       (this.value.equals(otherNode.value));
+    } else {
+	return this.value.equals(otherNode);
+    }
+};
+
+// TODO: Generating bnodes that are unique in an environment?
+
 // And don't forget the Graph interface.
 
 IRDFGraphLiteral.prototype.__defineGetter__('length', function() {
@@ -921,10 +933,6 @@ var IRDFGraph = function(env, triples, iri) { IRDFGraph.fn.init.apply(this, [env
  * @class Implements <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-Graph">Graph</a>.  Most functions may return invalid answers before a persistent graph has finished loading.  The Graph#request property may be monitored immediately following graph creation to determine when the graph has finished loading.
  * @name IRDFGraph
  */
-// Need to assign an IRI to the graph in order to save it automatically?
-// Need to be able to find existing graphs
-// GraphLiteral?
-// Transient copies vs. durable copies
 IRDFGraph.fn = IRDFGraph.prototype = {
     init: function(env, triples, iri) {
 	/**
@@ -1374,6 +1382,28 @@ IRDFGraph.fn = IRDFGraph.prototype = {
 	}
 	this.persistent = false;
 	this._iri = null;
+    },
+    
+    /**
+     * Return true if this graph contains exactly the triples in another graph.  (Note: as comparison is currently done by comparing stringifications of all triples in the graph, this will consider two bnodes equal if bnode[0].value == bnode[1].value.)
+     * @param graph {<a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-Graph">Graph</a>} The graph to compare to this graph.
+     * @return {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-boolean">boolean</a>} True, if this graph contains exactly the triples in the other graph.
+     */
+    equals: function(graph) {
+	var thisTriples = new Object();
+	var thatTriples = new Object();
+	
+	this.forEach(function(triple) {
+	    thisTriples[triple.toString()] = true;
+	});
+	graph.forEach(function(triple) {
+	    thatTriples[triple.toString()] = true;
+	});
+	return graph.every(function(triple) {
+	    return thisTriples[triple.toString()];
+        }) && this.every(function(triple) {
+	    return thatTriples[triple.toString()];
+	});
     }
 };
 

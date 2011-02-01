@@ -5,7 +5,7 @@
 <script language="JavaScript" src="../indexedRDF.js"></script>
 <script language="JavaScript">
 //<![CDATA[
-var testCount = 8;
+var testCount = 9;
 var env = null;
 
 function setUpPage() {
@@ -344,6 +344,44 @@ function testPersistence() {
     // TODO: Test #iri, #env, #persistent
     // TODO: Test #nonpersistentCopy, #persist, #unpersist
     // TODO: Test true persistence between page loads.
+}
+
+function testEquals() {
+    var subject = env.createNamedNode('http://www.example.com/subject');
+    var property = env.createNamedNode('http://www.example.com/property');
+    var object = env.createNamedNode('http://www.example.com/object');
+    var triple = env.createTriple(subject, property, object);
+    var graph1 = env.createGraph([triple]);
+    var graph2 = env.createGraph();
+    var graph3 = env.createGraph([triple]);
+    var graph4 = env.createGraph([env.createTriple(object, property, subject)]);
+    var graph5 = env.createGraph([env.createTriple(subject, property, object)]);
+    
+    assert(graph1.equals(graph1));
+    assert(graph2.equals(graph2));
+    assert(graph3.equals(graph3));
+    assert(graph4.equals(graph4));
+    assert(graph5.equals(graph5));
+    assert(!graph1.equals(graph2));
+    assert(!graph2.equals(graph1));
+    assert(graph1.equals(graph3));
+    assert(graph3.equals(graph1));
+    assert(!graph1.equals(graph4));
+    assert(!graph4.equals(graph1));
+    assert(graph1.equals(graph5));
+    assert(graph5.equals(graph1));
+    assert(!graph2.equals(graph3));
+    assert(!graph3.equals(graph2));
+    assert(!graph2.equals(graph4));
+    assert(!graph4.equals(graph2));
+    assert(!graph2.equals(graph5));
+    assert(!graph5.equals(graph2));
+    assert(!graph3.equals(graph4));
+    assert(!graph4.equals(graph3));
+    assert(graph3.equals(graph5));
+    assert(graph5.equals(graph3));
+    assert(!graph4.equals(graph5));
+    assert(!graph5.equals(graph4));
 }
 //]]>
 </script>
