@@ -117,18 +117,18 @@ function testSomeEveryThe() {
     var subjIsSubj = function(triple) {
         return triple.subject.equals(subject) && !triple.object.equals(subject);
     };
-    assert(graph.some(shareProperty));
-    assert(!graph.every(shareProperty));
-    assert(graph.the(shareProperty));
+    assert(graph.some(subjIsSubj));
+    assert(!graph.every(subjIsSubj));
+    assert(graph.the(subjIsSubj));
     
     // None have a subject, predicate, and object that are the same.
     var allSame = { test: function(triple) {
         return triple.subject.equals(triple.property) &&
                triple.property.equals(triple.object);
     }};
-    assert(!graph.some(shareProperty));
-    assert(!graph.every(shareProperty));
-    assert(!graph.the(shareProperty));
+    assert(!graph.some(allSame));
+    assert(!graph.every(allSame));
+    assert(!graph.the(allSame));
 }
 
 // The tripleEquals function returns a callback which is true when the
