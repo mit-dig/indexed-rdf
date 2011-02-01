@@ -314,6 +314,31 @@ function resolveIRI(base, rel) {
 }
 
 /**
+ * Generate a random (Version 4) UUID without dashes (for use with bnodes)
+ * @return {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} A newly minted random (Version 4) UUID without dashes.
+ */
+function genBnodeUUID() {
+    var hex = '0123456789abcdef';
+    var uuid = [];
+    
+    // Choose each nibble randomly.
+    for (var i = 0; i < 32; i++) {
+	if (i == 16) {
+	    // 17th nibble (containing 2 highest bits in clk_seq_hi_res)
+	    // must have 2 highest bits set to zero and one respectively.
+	    uuid.push(hex[8 + Math.floor(Math.random()*4)]);
+	} else if (i == 12) {
+	    // 13th nibble is the version number.
+	    uuid.push(hex[4]);
+	} else {
+	    uuid.push(hex[Math.floor(Math.random()*16)]);
+	}
+    }
+    
+    return uuid.join('');
+}
+
+/**
  * @private
  * @constructor Creates a new IRDFNode.
  * @param value {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-any">any</a>} The value of this IRDFNode.
@@ -648,8 +673,6 @@ IRDFGraphLiteral.prototype.equals = function(otherNode) {
 	return this.value.equals(otherNode);
     }
 };
-
-// TODO: Generating bnodes that are unique in an environment?
 
 // And don't forget the Graph interface.
 
@@ -1878,12 +1901,6 @@ IRDFEnvironment.prototype.init = function(db) {
      * @type <a href="http://www.w3.org/TR/IndexedDB/#idl-def-IDBDatabase">IDBDatabase</a>
      */
     this.db = db;
-    /**
-     * @private
-     * An internal counter for generating blank node values.
-     * @type <a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-integer">integer</a>
-     */
-    this.bnodeCounter = 1;
 };
 
 /**
@@ -1903,7 +1920,9 @@ IRDFEnvironment.prototype.__defineGetter__('name', function() {
  * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createBlankNode">RDFEnvironment#createBlankNode</a>
  */
 IRDFEnvironment.prototype.createBlankNode = function() {
-    return new IRDFBlankNode('bnode' + (this.bnodeCounter++));
+    // Generate a random (Version 4) UUID for each bnode to try to keep them
+    // from ever colliding.
+    return new IRDFBlankNode('bnode_' + genBnodeUUID());
 };
 
 /**
@@ -2324,6 +2343,7 @@ IRDFFactory.prototype = {
 		    var objectStore = db.createObjectStore('quads', { keyPath: '_trig' });
 		    
 		    objectStore.createIndex('graph', 'graph', { unique: false });
+		    
 		    oldSuccess.handleEvent(event);
 		}
 		newRequest.onerror = function(event) {
