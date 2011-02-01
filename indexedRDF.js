@@ -1065,10 +1065,10 @@ IRDFGraph.fn = IRDFGraph.prototype = {
 	var count = 0;
 	for (var i = 0; i < this._triples.length; i++) {
 	    if ((typeof callback === 'function' &&
-		 callback(triple)) ||
+		 callback(this._triples[i])) ||
 		(callback.test &&
 		 typeof callback.test === 'function' &&
-		 callback.test(triple))) {
+		 callback.test(this._triples[i]))) {
 		count++;
 	    }
 	    if (count > 1) {
