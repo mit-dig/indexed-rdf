@@ -1779,7 +1779,11 @@ IRDFEnvironment.prototype.createNamedNode = function(iri) {
  * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createLiteral">RDFEnvironment#createLiteral</a>
  */
 IRDFEnvironment.prototype.createLiteral = function(value, language, datatype) {
-    return new IRDFLiteral(value, language, this.createNamedNode(datatype));
+    if (datatype == undefined) {
+	return new IRDFLiteral(value, language);
+    } else {
+	return new IRDFLiteral(value, language, this.createNamedNode(datatype));
+    }
 };
 
 /**
@@ -2169,11 +2173,11 @@ IRDFFactory.prototype = {
 		    var objectStore = db.createObjectStore('quads', { keyPath: '_trig' });
 		    
 		    objectStore.createIndex('graph', 'graph', { unique: false });
-		    oldSuccess(event);
+		    oldSuccess.handleEvent(event);
 		}
 		newRequest.onerror = function(event) {
 		    db.close();
-		    oldError(event);
+		    oldError.handleEvent(event);
 		};
 		
 		idbRequest = newRequest;

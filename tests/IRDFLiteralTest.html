@@ -223,8 +223,8 @@ function testEquals() {
     var literal2 = env.createLiteral('literal');
     var langLiteral = env.createLiteral('literal', 'en');
     var langLiteral2 = env.createLiteral('literal', 'en');
-    var dt = env.createNamedNode('http://www.example.com/');
-    var dt2 = env.createNamedNode('http://www.example.com/');
+    var dt = 'http://www.example.com/';
+    var dt2 = 'http://www.example.com/';
     var dtLiteral = env.createLiteral('literal', undefined, dt);
     var dtLiteral2 = env.createLiteral('literal', undefined, dt2);
     var langDtLiteral = env.createLiteral('literal', 'en', dt);
@@ -234,7 +234,7 @@ function testEquals() {
     assert(langLiteral.equals(langLiteral));
     assert(dtLiteral.equals(dtLiteral));
     assert(langDtLiteral.equals(langDtLiteral));
-
+    
     assert(!literal.equals(langLiteral));
     assert(!langLiteral.equals(literal));
     assert(!literal.equals(dtLiteral));
