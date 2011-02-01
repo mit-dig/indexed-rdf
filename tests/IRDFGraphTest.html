@@ -110,7 +110,7 @@ function testSomeEveryThe() {
         }
     }};
     assert(graph.some(shareProperty));
-    assert(graph.all(shareProperty));
+    assert(graph.every(shareProperty));
     assert(!graph.the(shareProperty));
 
     // Only one has a subject of subject and an object that isn't.
@@ -118,7 +118,7 @@ function testSomeEveryThe() {
         return triple.subject.equals(subject) && !triple.object.equals(subject);
     };
     assert(graph.some(shareProperty));
-    assert(!graph.all(shareProperty));
+    assert(!graph.every(shareProperty));
     assert(graph.the(shareProperty));
     
     // None have a subject, predicate, and object that are the same.
@@ -127,7 +127,7 @@ function testSomeEveryThe() {
                triple.property.equals(triple.object);
     }};
     assert(!graph.some(shareProperty));
-    assert(!graph.all(shareProperty));
+    assert(!graph.every(shareProperty));
     assert(!graph.the(shareProperty));
 }
 
