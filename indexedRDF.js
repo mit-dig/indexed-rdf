@@ -291,6 +291,11 @@ var URIQuery;
 // Handle beta stuff.
 window.indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB;
 
+// A couple of useful terms.
+var RDFA_PREFIX = 'http://www.w3.org/ns/rdfa#prefix';
+var RDFA_TERM = 'http://www.w3.org/ns/rdfa#term';
+var RDFA_URI = 'http://www.w3.org/ns/rdfa#uri';
+
 /**
  * Resolve an IRI given a base IRI.
  * @param base {<a href="http://dev.w3.org/2006/webapi/WebIDL/#idl-DOMString">DOMString</a>} The base IRI from which rel may be considered relative.
@@ -1177,7 +1182,7 @@ IRDFGraph.fn = IRDFGraph.prototype = {
     addAction: function(action, run) {
 	this._actions.push(action);
 	if (run) {
-	    this.forEach(action.try);
+	    this.forEach(function(triple) { action.try(triple); });
 	}
         return this;
     },
@@ -1375,39 +1380,39 @@ IRDFPrefixMap.fn = IRDFPrefixMap.prototype = {
      */
     importFromGraph: function(graph, override) {
 	// Find all triples of the form "?s rdfa:prefix ?literal"
-	var filterPrefixes = new IRDFTripleFilter(function(triple) {
+	var filterPrefixes = function(triple) {
 	    return triple.property.equals(RDFA_PREFIX) &&
 	           triple.object.interfaceName == 'Literal';
-	});
+	};
 	var prefixGraph = graph.filter(filterPrefixes);
 	
 	// Add a mapping if we can also find a unique statement
 	// "?s rdfa:uri ?uri"
-	var addMapping = function(graph, override) {
-	    return new IRDFTripleCallback(function(triple) {
+	var addMapping = function(map, graph, override) {
+	    return function(triple) {
 		var mappingResource = triple.subject;
 		var prefix = triple.object.value;
 		
 		// If the prefix should be assigned, find the mapping.
-		if (this[prefix] == undefined || override) {
-		    var checkUnique = new IRDFTripleFilter(function(triple) {
+		if (map[prefix] == undefined || override) {
+		    var checkUnique = function(triple) {
 			return triple.subject.equals(mappingResource) &&
-			       triple.predicate.equals(RDFA_URI) &&
+			       triple.property.equals(RDFA_URI) &&
 			       triple.object.interfaceName == 'NamedNode';
-		    });
+		    };
 		    var unique = graph.the(checkUnique);
 		    
 		    // What if it's not unique?
 		    if (unique) {
 			var uriGraph = graph.filter(checkUnique);
 			
-			this[prefix] = uriGraph.toArray()[0].object.value;
+			map[prefix] = uriGraph.toArray()[0].object.value;
 		    }
 		}
-	    });
+	    };
 	};
 	
-	prefixGraph.forEach(addMapping(graph, override));
+	prefixGraph.forEach(addMapping(this, graph, override));
 	
 	return this;
     }
@@ -1532,39 +1537,39 @@ IRDFTermMap.fn = IRDFTermMap.prototype = {
      */
     importFromGraph: function(graph, override) {
 	// Find all triples of the form "?s rdfa:term ?literal"
-	var filterTerms = new IRDFTripleFilter(function(triple) {
+	var filterTerms = function(triple) {
 	    return triple.property.equals(RDFA_TERM) &&
 	           triple.object.interfaceName == 'Literal';
-	});
+	};
 	var termGraph = graph.filter(filterTerms);
 	
 	// Add a mapping if we can also find a unique statement
 	// "?s rdfa:uri ?uri"
-	var addMapping = function(graph, override) {
-	    return new IRDFTripleCallback(function(triple) {
+	var addMapping = function(map, graph, override) {
+	    return function(triple) {
 		var mappingResource = triple.subject;
 		var term = triple.object.value;
 		
 		// If the term should be assigned, find the mapping.
-		if (this[term] == undefined || override) {
-		    var checkUnique = new IRDFTripleFilter(function(triple) {
+		if (map[term] == undefined || override) {
+		    var checkUnique = function(triple) {
 			return triple.subject.equals(mappingResource) &&
-			       triple.predicate.equals(RDFA_URI) &&
+			       triple.property.equals(RDFA_URI) &&
 			       triple.object.interfaceName == 'NamedNode';
-		    });
+		    };
 		    var unique = graph.the(checkUnique);
 		    
 		    // What if it's not unique?
 		    if (unique) {
 			var uriGraph = graph.filter(checkUnique);
 			
-			this[term] = uriGraph.toArray()[0].object.value;
+			map[term] = uriGraph.toArray()[0].object.value;
 		    }
 		}
-	    });
+	    };
 	};
 	
-	termGraph.forEach(addMapping(graph, override));
+	termGraph.forEach(addMapping(this, graph, override));
 	
 	return this;
     }

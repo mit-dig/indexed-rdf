@@ -222,7 +222,7 @@ function testImportProfileFromGraph() {
     assertEquals('http://www.example.com/#term', env.resolve('t:term'));
     
     // Unless we say so.
-    env.importProfileFromGraph(profile, true);
+    env.importProfileFromGraph(graph, true);
     assertEquals('http://www.example.com/terms/term', env.resolve('term'));
     assertEquals('http://www.example.com/prefix#term', env.resolve('t:term'));
     

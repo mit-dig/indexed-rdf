@@ -202,13 +202,13 @@ function testImportProfileFromGraph() {
 
     // Now we change the values in the profile we imported...
     graph.remove(termIRI);
-    termIRINode = profile.createNamedNode('http://www.example.com/terms/term');
-    termIRI = profile.createTriple(termNode, rdfaURI, termIRINode);
+    termIRINode = env.createNamedNode('http://www.example.com/terms/term');
+    termIRI = env.createTriple(termNode, rdfaURI, termIRINode);
     graph.add(termIRI);
 
     graph.remove(prefixIRI);
-    prefixIRINode = profile.createNamedNode('http://www.example.com/prefix#');
-    prefixIRI = profile.createTriple(prefixNode, rdfaURI, prefixIRINode);
+    prefixIRINode = env.createNamedNode('http://www.example.com/prefix#');
+    prefixIRI = env.createTriple(prefixNode, rdfaURI, prefixIRINode);
     graph.add(prefixIRI);
     
     // Which should not change the profileironment.
@@ -221,7 +221,7 @@ function testImportProfileFromGraph() {
     assertEquals('http://www.example.com/#term', profile.resolve('t:term'));
     
     // Unless we say so.
-    profile.importProfileFromGraph(profile, true);
+    profile.importProfileFromGraph(graph, true);
     assertEquals('http://www.example.com/terms/term', profile.resolve('term'));
     assertEquals('http://www.example.com/prefix#term', profile.resolve('t:term'));
     
