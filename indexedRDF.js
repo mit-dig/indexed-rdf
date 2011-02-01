@@ -676,7 +676,8 @@ IRDFGraphLiteral.prototype.filter = function(filter) {
 };
 
 IRDFGraphLiteral.prototype.apply = function(apply) {
-    return this.value.apply(filter);
+    this.value.apply(apply);
+    return this;
 };
 
 IRDFGraphLiteral.prototype.forEach = function(callback) {
