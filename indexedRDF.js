@@ -824,8 +824,8 @@ IRDFGraph.fn = IRDFGraph.prototype = {
 	 * An array of the Triples in this graph (the active cache, if persistent)
 	 * @type <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#idl-def-Triple">[]Triple</a>
 	 */
-	if (this._triples == undefined ||
-	    this._triples == null) {
+	if (triples == undefined ||
+	    triples == null) {
 	    this._triples = [];
 	} else {
 	    this._triples = triples;
@@ -1032,7 +1032,7 @@ IRDFGraph.fn = IRDFGraph.prototype = {
      * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-Graph-some">Graph#some</a>
      */
     some: function(callback) {
-	return this._triples.some(function(triple) {
+	return this._triples.some(function(triple, index, array) {
 	    return ((typeof callback === 'function' &&
 		     callback(triple)) ||
 		    (callback.test &&
