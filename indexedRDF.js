@@ -614,10 +614,10 @@ IRDFGraphLiteral.prototype.init = function(value) {
 };
 
 IRDFGraphLiteral.prototype.toString = function() {
-    string = '{ ';
-    triples = this.value.toArray();
+    var string = '{ ';
+    var triples = this.value.toArray();
     
-    for (var i = 0; i < triples; i++) {
+    for (var i = 0; i < triples.length; i++) {
 	string += triples[i].toString() + "\n  " ;
     }
     
@@ -627,10 +627,10 @@ IRDFGraphLiteral.prototype.toString = function() {
 };
 
 IRDFGraphLiteral.prototype.toNT = function() {
-    string = '{ ';
-    triples = this.value.toArray();
+    var string = '{ ';
+    var triples = this.value.toArray();
     
-    for (var i = 0; i < triples; i++) {
+    for (var i = 0; i < triples.length; i++) {
 	string += triples[i].toString() + "\n  ";
     }
     
@@ -1907,7 +1907,11 @@ IRDFEnvironment.prototype.createLiteral = function(value, language, datatype) {
  * @see <a href="http://www.w3.org/2010/02/rdfa/sources/rdf-api/#widl-RDFEnvironment-createGraphLiteral">RDFEnvironment#createGraphLiteral</a>
  */
 IRDFEnvironment.prototype.createGraphLiteral = function(graph) {
-    return new IRDFGraphLiteral(graph);
+    if (graph == undefined) {
+	return new IRDFGraphLiteral(this.createGraph());
+    } else {
+	return new IRDFGraphLiteral(graph);
+    }
 };
 
 /**
